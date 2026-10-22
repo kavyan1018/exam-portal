@@ -14,5 +14,5 @@ COPY --from=build /app/target/*.jar app.jar
 ENV JAVA_OPTS="-XX:+UseSerialGC -Xss512k -XX:MaxRAM=450m -Xmx350m -Djava.security.egd=file:/dev/./urandom"
 ENV SPRING_PROFILES_ACTIVE="mysql"
 
-EXPOSE 8080
+EXPOSE 4040 8080 10000
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

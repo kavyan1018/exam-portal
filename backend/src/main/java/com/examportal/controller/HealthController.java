@@ -9,10 +9,18 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/health")
 public class HealthController {
 
-    @GetMapping
+    @GetMapping("/")
+    public ResponseEntity<Map<String, Object>> rootCheck() {
+        return ResponseEntity.ok(Map.of(
+                "status", "UP",
+                "service", "Secure MCQ Exam Portal Backend",
+                "serverTime", LocalDateTime.now().toString()
+        ));
+    }
+
+    @GetMapping("/api/v1/health")
     public ResponseEntity<Map<String, Object>> checkHealth() {
         return ResponseEntity.ok(Map.of(
                 "status", "UP",
