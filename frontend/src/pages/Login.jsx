@@ -31,8 +31,8 @@ export default function Login() {
 
   const fillDemo = (role) => {
     if (role === 'kavyan') {
-      setEmail('kavyan@college.edu');
-      setPassword('Kavyan@123');
+      setEmail('kavvyanfaculty@gmail.com');
+      setPassword('kavyan@faculty22');
     } else if (role === 'student') {
       setEmail('student@college.edu');
       setPassword('Student@123');
