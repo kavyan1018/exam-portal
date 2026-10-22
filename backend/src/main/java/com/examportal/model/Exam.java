@@ -47,6 +47,8 @@ public class Exam {
 
     private boolean enableWebcam = true;
 
+    private boolean isLocked = false;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ExamStatus status = ExamStatus.DRAFT;
@@ -102,6 +104,9 @@ public class Exam {
 
     public boolean isEnableWebcam() { return enableWebcam; }
     public void setEnableWebcam(boolean enableWebcam) { this.enableWebcam = enableWebcam; }
+
+    public boolean isLocked() { return isLocked; }
+    public void setLocked(boolean locked) { isLocked = locked; }
 
     public ExamStatus getStatus() { return status; }
     public void setStatus(ExamStatus status) { this.status = status; }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/client';
-import { BookOpen, Clock, AlertTriangle, Shield, CheckCircle2, ChevronRight, Eye } from 'lucide-react';
+import { BookOpen, Clock, AlertTriangle, Shield, CheckCircle2, ChevronRight, Eye, Lock } from 'lucide-react';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -75,7 +75,14 @@ export default function StudentDashboard() {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                   <span className="badge badge-primary">MCQ Assessment</span>
-                  <span className="badge badge-success">Live</span>
+                  {exam.locked ? (
+                    <span className="badge badge-danger" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Lock size={12} />
+                      LOCKED
+                    </span>
+                  ) : (
+                    <span className="badge badge-success">Live</span>
+                  )}
                 </div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>
                   {exam.title}
@@ -102,14 +109,25 @@ export default function StudentDashboard() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setSelectedExam(exam)}
-                className="btn btn-primary"
-                style={{ width: '100%' }}
-              >
-                <span>View Instructions & Take Exam</span>
-                <ChevronRight size={16} />
-              </button>
+              {exam.locked ? (
+                <button
+                  disabled
+                  className="btn btn-secondary"
+                  style={{ width: '100%', opacity: 0.7 }}
+                >
+                  <Lock size={16} />
+                  <span>Locked by Administrator</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setSelectedExam(exam)}
+                  className="btn btn-primary"
+                  style={{ width: '100%' }}
+                >
+                  <span>View Instructions & Take Exam</span>
+                  <ChevronRight size={16} />
+                </button>
+              )}
             </div>
           ))}
         </div>

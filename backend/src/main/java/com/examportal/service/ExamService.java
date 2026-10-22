@@ -171,6 +171,7 @@ public class ExamService {
         dto.setRandomizeOptions(exam.isRandomizeOptions());
         dto.setMaxViolationsAllowed(exam.getMaxViolationsAllowed());
         dto.setEnableWebcam(exam.isEnableWebcam());
+        dto.setLocked(exam.isLocked());
         dto.setStatus(exam.getStatus());
         dto.setCreatedByName(exam.getCreatedBy() != null ? exam.getCreatedBy().getFullName() : null);
         dto.setQuestionCount(exam.getQuestions() != null ? exam.getQuestions().size() : 0);

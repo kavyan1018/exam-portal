@@ -19,6 +19,7 @@ public class ExamDto {
     private boolean randomizeOptions;
     private int maxViolationsAllowed;
     private boolean enableWebcam;
+    private boolean isLocked;
     private ExamStatus status;
     private String createdByName;
     private int questionCount;
@@ -64,6 +65,9 @@ public class ExamDto {
 
     public boolean isEnableWebcam() { return enableWebcam; }
     public void setEnableWebcam(boolean enableWebcam) { this.enableWebcam = enableWebcam; }
+
+    public boolean isLocked() { return isLocked; }
+    public void setLocked(boolean locked) { isLocked = locked; }
 
     public ExamStatus getStatus() { return status; }
     public void setStatus(ExamStatus status) { this.status = status; }

@@ -45,6 +45,9 @@ public class FacultyExamController {
     @Autowired
     private com.examportal.repository.ExamAttemptRepository attemptRepository;
 
+    @Autowired
+    private com.examportal.service.ExamTakingService examTakingService;
+
     @GetMapping
     public ResponseEntity<List<ExamDto>> getMyExams(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         return ResponseEntity.ok(examService.getExamsByFaculty(userDetails.getId()));
@@ -146,6 +149,21 @@ public class FacultyExamController {
                 "message", "Evaluation complete. Emailed scorecards to " + sentCount + " students.",
                 "emailsSent", sentCount
         ));
+    }
+
+    @PutMapping("/{id}/toggle-lock")
+    public ResponseEntity<Map<String, Object>> toggleExamLock(@PathVariable Long id) {
+        boolean isLocked = examTakingService.toggleExamLock(id);
+        return ResponseEntity.ok(Map.of(
+                "isLocked", isLocked,
+                "message", isLocked ? "Exam has been LOCKED. Students cannot enter." : "Exam has been UNLOCKED. Students can take it."
+        ));
+    }
+
+    @PostMapping("/{id}/students/{studentId}/reset-attempt")
+    public ResponseEntity<Map<String, String>> resetStudentAttempt(@PathVariable Long id, @PathVariable Long studentId) {
+        examTakingService.resetStudentAttempt(id, studentId);
+        return ResponseEntity.ok(Map.of("message", "Student attempt has been reset. The student can now take the exam fresh."));
     }
 
     @GetMapping("/attempts/{attemptId}/proctoring-logs")

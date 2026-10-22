@@ -61,7 +61,8 @@ export default function ExamTakingView() {
         }
       } catch (err) {
         console.error("Failed to start exam", err);
-        alert(err.response?.data?.message || "Could not start exam. It may have expired or already been submitted.");
+        const errorMsg = err.response?.data?.message || err.response?.data?.error || err.message || "Could not start exam.";
+        alert(errorMsg);
         navigate('/student');
       }
     };

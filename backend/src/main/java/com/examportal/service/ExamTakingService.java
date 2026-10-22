@@ -52,6 +52,10 @@ public class ExamTakingService {
             throw new IllegalStateException("Exam is not currently published for taking");
         }
 
+        if (exam.isLocked()) {
+            throw new IllegalStateException("This exam is currently LOCKED by the Super Admin. Students cannot take it until it is unlocked.");
+        }
+
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(exam.getStartWindow())) {
             throw new IllegalStateException("Exam window has not opened yet");
@@ -69,7 +73,7 @@ public class ExamTakingService {
         if (existingOpt.isPresent()) {
             attempt = existingOpt.get();
             if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
-                throw new IllegalStateException("Exam attempt is already finished (" + attempt.getStatus() + ")");
+                throw new IllegalStateException("You have already submitted this exam (" + attempt.getStatus() + "). Final Score: " + attempt.getScore() + " / " + exam.getTotalMarks() + ". To retake, contact Super Admin to unlock your attempt.");
             }
 
             // Check if time expired
@@ -292,6 +296,27 @@ public class ExamTakingService {
 
         attempt.setScore(score);
         attempt.setPassed(score.compareTo(exam.getPassMarks()) >= 0);
+    }
+
+    @Transactional
+    public boolean toggleExamLock(Long examId) {
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new IllegalArgumentException("Exam not found"));
+        boolean newLockState = !exam.isLocked();
+        exam.setLocked(newLockState);
+        examRepository.save(exam);
+        return newLockState;
+    }
+
+    @Transactional
+    public void resetStudentAttempt(Long examId, Long userId) {
+        Optional<ExamAttempt> attemptOpt = attemptRepository.findByExamIdAndUserId(examId, userId);
+        if (attemptOpt.isPresent()) {
+            ExamAttempt attempt = attemptOpt.get();
+            studentAnswerRepository.deleteAll(studentAnswerRepository.findByAttemptId(attempt.getId()));
+            proctoringLogRepository.deleteAll(proctoringLogRepository.findByAttemptIdOrderByLoggedAtDesc(attempt.getId()));
+            attemptRepository.delete(attempt);
+        }
     }
 
     // Runs every 30 seconds to auto-close any abandoned or timed-out exams

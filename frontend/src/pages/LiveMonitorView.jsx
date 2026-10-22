@@ -38,6 +38,18 @@ export default function LiveMonitorView() {
     }
   };
 
+  const handleResetAttempt = async (studentId, studentName) => {
+    if (!window.confirm(`Are you sure you want to unlock and reset the attempt for ${studentName}? This clears their previous submission so they can take the exam again.`)) return;
+
+    try {
+      await api.post(`/api/v1/faculty/exams/${examId}/students/${studentId}/reset-attempt`);
+      alert(`Attempt for ${studentName} has been unlocked! They can now start the exam fresh.`);
+      fetchLiveAttempts();
+    } catch (err) {
+      alert("Failed to reset student attempt");
+    }
+  };
+
   const formatRemaining = (seconds) => {
     if (seconds <= 0) return '00:00';
     const m = Math.floor(seconds / 60);
@@ -144,13 +156,24 @@ export default function LiveMonitorView() {
                       </td>
 
                       <td style={{ padding: '1rem', textAlign: 'right' }}>
-                        <button
-                          onClick={() => setSelectedAttempt(att)}
-                          className="btn btn-secondary btn-sm"
-                        >
-                          <Eye size={14} />
-                          <span>Audit Logs</span>
-                        </button>
+                        <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                          <button
+                            onClick={() => handleResetAttempt(att.studentId, att.studentName)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ borderColor: '#eab308', color: '#b45309' }}
+                            title="Unlock and reset this student's attempt to let them retake"
+                          >
+                            <RefreshCw size={13} />
+                            <span>Unlock Retake</span>
+                          </button>
+                          <button
+                            onClick={() => setSelectedAttempt(att)}
+                            className="btn btn-secondary btn-sm"
+                          >
+                            <Eye size={13} />
+                            <span>Logs</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

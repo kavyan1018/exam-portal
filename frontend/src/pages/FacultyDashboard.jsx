@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import AdminFacultyModal from '../components/AdminFacultyModal';
 import AdminStudentBatchModal from '../components/AdminStudentBatchModal';
-import { PlusCircle, FileText, Users, BarChart3, HelpCircle, Calendar, Clock, ShieldCheck, Layers } from 'lucide-react';
+import { PlusCircle, FileText, Users, BarChart3, HelpCircle, Calendar, Clock, ShieldCheck, Layers, Lock, Unlock } from 'lucide-react';
 
 export default function FacultyDashboard() {
   const { user } = useAuth();
@@ -25,6 +25,15 @@ export default function FacultyDashboard() {
       console.error("Failed to load faculty exams", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleLock = async (examId, currentLocked) => {
+    try {
+      const res = await api.put(`/api/v1/faculty/exams/${examId}/toggle-lock`);
+      setExams(exams.map(e => e.id === examId ? { ...e, locked: res.data.isLocked } : e));
+    } catch (err) {
+      alert("Failed to toggle lock status");
     }
   };
 
@@ -88,6 +97,10 @@ export default function FacultyDashboard() {
                   <span className={`badge ${exam.status === 'PUBLISHED' ? 'badge-success' : 'badge-gray'}`}>
                     {exam.status}
                   </span>
+                  <span className={`badge ${exam.locked ? 'badge-danger' : 'badge-success'}`} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    {exam.locked ? <Lock size={12} /> : <Unlock size={12} />}
+                    {exam.locked ? 'LOCKED' : 'UNLOCKED'}
+                  </span>
                 </div>
                 <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
                   {exam.description || 'No description provided.'}
@@ -105,6 +118,14 @@ export default function FacultyDashboard() {
 
               {/* Action Buttons */}
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => handleToggleLock(exam.id, exam.locked)}
+                  className={`btn btn-sm ${exam.locked ? 'btn-danger' : 'btn-secondary'}`}
+                  title={exam.locked ? "Click to Unlock exam for students" : "Click to Lock exam"}
+                >
+                  {exam.locked ? <Lock size={15} /> : <Unlock size={15} />}
+                  <span>{exam.locked ? 'Locked (Click to Open)' : 'Lock Exam'}</span>
+                </button>
                 <Link to={`/faculty/exam/${exam.id}/questions`} className="btn btn-secondary btn-sm">
                   <HelpCircle size={15} />
                   <span>Questions ({exam.questionCount})</span>
