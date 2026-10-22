@@ -30,10 +30,7 @@ export default function Login() {
   };
 
   const fillDemo = (role) => {
-    if (role === 'kavyan') {
-      setEmail('kavvyanfaculty@gmail.com');
-      setPassword('kavyan@faculty22');
-    } else if (role === 'student') {
+    if (role === 'student') {
       setEmail('student@college.edu');
       setPassword('Student@123');
     } else {
@@ -94,11 +91,8 @@ export default function Login() {
         </form>
 
         <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #e2e8f0' }}>
-          <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 600 }}>QUICK LOGIN SHORTCUTS:</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-            <button type="button" onClick={() => fillDemo('kavyan')} className="btn btn-secondary btn-sm" style={{ fontWeight: 700, color: '#dc2626' }}>
-              Kavyan (Admin)
-            </button>
+          <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 600 }}>QUICK DEMO LOGINS:</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
             <button type="button" onClick={() => fillDemo('faculty')} className="btn btn-secondary btn-sm">
               Faculty Demo
             </button>
