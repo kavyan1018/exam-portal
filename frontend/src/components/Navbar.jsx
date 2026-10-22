@@ -51,8 +51,11 @@ export default function Navbar() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
               <User size={18} color="#64748b" />
               <span style={{ fontWeight: 600 }}>{user.fullName}</span>
-              <span className={`badge ${user.role === 'ROLE_FACULTY' ? 'badge-primary' : 'badge-gray'}`}>
-                {user.role === 'ROLE_FACULTY' ? 'Faculty' : 'Student'}
+              <span className={`badge ${
+                user.role === 'ROLE_ADMIN' ? 'badge-danger' :
+                user.role === 'ROLE_FACULTY' ? 'badge-primary' : 'badge-gray'
+              }`}>
+                {user.role === 'ROLE_ADMIN' ? 'Super Admin' : user.role === 'ROLE_FACULTY' ? 'Faculty' : 'Student'}
               </span>
             </div>
             <button onClick={handleLogout} className="btn btn-secondary btn-sm" title="Log out">

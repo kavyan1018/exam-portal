@@ -33,7 +33,19 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (userRepository.count() > 0) {
+        // Ensure Kavyan Nayak (Main Administrator) account always exists
+        if (!userRepository.existsByEmail("kavyan@college.edu")) {
+            User kavyan = new User(
+                    "Kavyan Nayak",
+                    "kavyan@college.edu",
+                    passwordEncoder.encode("Kavyan@123"),
+                    Role.ROLE_ADMIN,
+                    "ADMIN-KAVYAN"
+            );
+            userRepository.save(kavyan);
+        }
+
+        if (examRepository.count() > 0) {
             return;
         }
 

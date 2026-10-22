@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
-import { PlusCircle, FileText, Users, BarChart3, HelpCircle, Calendar, Clock } from 'lucide-react';
+import AdminFacultyModal from '../components/AdminFacultyModal';
+import { PlusCircle, FileText, Users, BarChart3, HelpCircle, Calendar, Clock, ShieldCheck } from 'lucide-react';
 
 export default function FacultyDashboard() {
+  const { user } = useAuth();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [facultyModalOpen, setFacultyModalOpen] = useState(false);
 
   useEffect(() => {
     fetchExams();
@@ -31,10 +35,22 @@ export default function FacultyDashboard() {
             Author MCQ exams, monitor active student sessions in real time, and audit results.
           </p>
         </div>
-        <Link to="/faculty/exam/create" className="btn btn-primary">
-          <PlusCircle size={18} />
-          <span>Create New Exam</span>
-        </Link>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {user?.role === 'ROLE_ADMIN' && (
+            <button
+              onClick={() => setFacultyModalOpen(true)}
+              className="btn btn-secondary"
+              style={{ borderColor: '#dc2626', color: '#dc2626' }}
+            >
+              <ShieldCheck size={18} />
+              <span>Manage Faculty (Admin)</span>
+            </button>
+          )}
+          <Link to="/faculty/exam/create" className="btn btn-primary">
+            <PlusCircle size={18} />
+            <span>Create New Exam</span>
+          </Link>
+        </div>
       </div>
 
       {loading ? (
@@ -93,6 +109,10 @@ export default function FacultyDashboard() {
             </div>
           ))}
         </div>
+      )}
+
+      {facultyModalOpen && (
+        <AdminFacultyModal onClose={() => setFacultyModalOpen(false)} />
       )}
     </div>
   );

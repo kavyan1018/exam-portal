@@ -56,7 +56,8 @@ public class AuthService {
             throw new IllegalArgumentException("Error: Email is already in use!");
         }
 
-        Role role = registerRequest.getRole() != null ? registerRequest.getRole() : Role.ROLE_STUDENT;
+        // Public registration is strictly locked to Student role
+        Role role = Role.ROLE_STUDENT;
 
         User user = new User(
                 registerRequest.getFullName(),
@@ -73,5 +74,21 @@ public class AuthService {
             setEmail(registerRequest.getEmail());
             setPassword(registerRequest.getPassword());
         }});
+    }
+
+    public User createFacultyUser(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Error: Email is already in use!");
+        }
+
+        User faculty = new User(
+                request.getFullName(),
+                request.getEmail(),
+                encoder.encode(request.getPassword()),
+                Role.ROLE_FACULTY,
+                request.getStudentId() != null ? request.getStudentId() : "FAC-" + System.currentTimeMillis() % 1000
+        );
+
+        return userRepository.save(faculty);
     }
 }
