@@ -34,12 +34,13 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         // Ensure Kavyan Nayak (Main Administrator) account always exists with requested credentials
-        userRepository.findByEmail("kavvyanfaculty@gmail.com").ifPresentOrElse(
+        userRepository.findByEmailIgnoreCase("kavvyanfaculty@gmail.com").ifPresentOrElse(
                 user -> {
                     user.setFullName("Kavyan Nayak");
                     user.setPassword(passwordEncoder.encode("kavyan@faculty22"));
                     user.setRole(Role.ROLE_ADMIN);
                     userRepository.save(user);
+                    System.out.println(">>> [INIT] Updated Kavyan Nayak credentials successfully!");
                 },
                 () -> {
                     User kavyan = new User(
@@ -50,6 +51,7 @@ public class DataInitializer implements CommandLineRunner {
                             "ADMIN-KAVYAN"
                     );
                     userRepository.save(kavyan);
+                    System.out.println(">>> [INIT] Created Kavyan Nayak account successfully!");
                 }
         );
 
