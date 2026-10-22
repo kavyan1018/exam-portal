@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+// When running on production, default to deployed Render backend if environment variable is not injected
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://exam-portal-api-k39z.onrender.com' : '');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
