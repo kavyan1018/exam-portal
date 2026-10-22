@@ -91,13 +91,13 @@ export default function Login() {
         </form>
 
         <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #e2e8f0' }}>
-          <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 600 }}>QUICK DEMO LOGINS:</p>
+          <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: 600 }}>QUICK LOGIN SHORTCUTS:</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
             <button type="button" onClick={() => fillDemo('faculty')} className="btn btn-secondary btn-sm">
-              Faculty Demo
+              Faculty Login
             </button>
             <button type="button" onClick={() => fillDemo('student')} className="btn btn-secondary btn-sm">
-              Student Demo
+              Student Login
             </button>
           </div>
         </div>
