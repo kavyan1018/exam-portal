@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/client';
-import { ArrowLeft, Download, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Download, CheckCircle2, XCircle, AlertTriangle, Mail, Send } from 'lucide-react';
 
 export default function ExamResultsFacultyView() {
   const { id: examId } = useParams();
   const [exam, setExam] = useState(null);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [emailing, setEmailing] = useState(false);
+  const [emailMessage, setEmailMessage] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -26,6 +28,21 @@ export default function ExamResultsFacultyView() {
     };
     fetchData();
   }, [examId]);
+
+  const handleEmailResults = async () => {
+    if (!window.confirm("Do you want to evaluate and email official scorecards to all completed students?")) return;
+    setEmailing(true);
+    setEmailMessage('');
+
+    try {
+      const res = await api.post(`/api/v1/faculty/exams/${examId}/release-and-email-results`);
+      setEmailMessage(res.data.message);
+    } catch (err) {
+      alert("Failed to dispatch emails");
+    } finally {
+      setEmailing(false);
+    }
+  };
 
   const exportCsv = () => {
     if (results.length === 0) return;
@@ -65,12 +82,30 @@ export default function ExamResultsFacultyView() {
             <h1 style={{ fontSize: '1.65rem', fontWeight: 800, color: '#0f172a' }}>Assessment Grade Sheet</h1>
             <p style={{ color: '#64748b', fontSize: '0.9rem' }}>{exam?.title}</p>
           </div>
-          <button onClick={exportCsv} disabled={results.length === 0} className="btn btn-primary btn-sm">
-            <Download size={15} />
-            <span>Export CSV Grade Sheet</span>
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleEmailResults}
+              disabled={emailing || results.length === 0}
+              className="btn btn-secondary btn-sm"
+              style={{ borderColor: '#16a34a', color: '#16a34a' }}
+            >
+              <Mail size={15} />
+              <span>{emailing ? 'Emailing Scorecards...' : 'Auto-Grade & Email to Students'}</span>
+            </button>
+            <button onClick={exportCsv} disabled={results.length === 0} className="btn btn-primary btn-sm">
+              <Download size={15} />
+              <span>Export CSV Grade Sheet</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {emailMessage && (
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.9rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <CheckCircle2 size={18} />
+          <span>{emailMessage}</span>
+        </div>
+      )}
 
       {loading ? (
         <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>Generating marksheet...</div>

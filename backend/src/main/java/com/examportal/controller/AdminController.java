@@ -27,6 +27,9 @@ public class AdminController {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     @GetMapping("/faculty")
     public ResponseEntity<List<UserDto>> listFacultyMembers() {
         List<User> facultyList = userRepository.findByRole(Role.ROLE_FACULTY);
@@ -59,5 +62,81 @@ public class AdminController {
 
         userRepository.delete(user);
         return ResponseEntity.ok(Map.of("message", "Faculty account deleted successfully"));
+    }
+
+    // --- STUDENT & BATCH MANAGEMENT (Super Admin) ---
+
+    @GetMapping("/students")
+    public ResponseEntity<List<UserDto>> listStudents(@RequestParam(required = false) String batch) {
+        List<User> students = userRepository.findByRole(Role.ROLE_STUDENT);
+        if (batch != null && !batch.isBlank()) {
+            students = students.stream()
+                    .filter(s -> batch.equalsIgnoreCase(s.getStudentId()))
+                    .collect(Collectors.toList());
+        }
+
+        List<UserDto> dtos = students.stream()
+                .map(u -> new UserDto(u.getId(), u.getFullName(), u.getEmail(), u.getRole(), u.getStudentId()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    @PostMapping("/students")
+    public ResponseEntity<UserDto> addStudentWithBatch(@Valid @RequestBody RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Email is already registered");
+        }
+
+        User student = new User(
+                request.getFullName(),
+                request.getEmail(),
+                passwordEncoder.encode(request.getPassword()),
+                Role.ROLE_STUDENT,
+                request.getStudentId() != null ? request.getStudentId() : "General Batch"
+        );
+
+        User saved = userRepository.save(student);
+        return ResponseEntity.ok(new UserDto(saved.getId(), saved.getFullName(), saved.getEmail(), saved.getRole(), saved.getStudentId()));
+    }
+
+    @PutMapping("/students/{id}/batch")
+    public ResponseEntity<UserDto> updateStudentBatch(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        String newBatch = payload.get("batch");
+        User student = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Student not found"));
+
+        if (student.getRole() != Role.ROLE_STUDENT) {
+            throw new IllegalArgumentException("Target user is not a student");
+        }
+
+        student.setStudentId(newBatch);
+        User updated = userRepository.save(student);
+        return ResponseEntity.ok(new UserDto(updated.getId(), updated.getFullName(), updated.getEmail(), updated.getRole(), updated.getStudentId()));
+    }
+
+    @PostMapping("/students/bulk-batch")
+    public ResponseEntity<Map<String, Object>> bulkAssignBatch(@RequestBody Map<String, Object> payload) {
+        String newBatch = (String) payload.get("batch");
+        List<Integer> studentIds = (List<Integer>) payload.get("studentIds");
+
+        if (newBatch == null || studentIds == null || studentIds.isEmpty()) {
+            throw new IllegalArgumentException("Batch name and student IDs are required");
+        }
+
+        int updatedCount = 0;
+        for (Integer sId : studentIds) {
+            userRepository.findById(sId.longValue()).ifPresent(u -> {
+                if (u.getRole() == Role.ROLE_STUDENT) {
+                    u.setStudentId(newBatch);
+                    userRepository.save(u);
+                }
+            });
+            updatedCount++;
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Assigned " + updatedCount + " students to " + newBatch,
+                "updatedCount", updatedCount
+        ));
     }
 }

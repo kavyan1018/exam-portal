@@ -3,13 +3,15 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import AdminFacultyModal from '../components/AdminFacultyModal';
-import { PlusCircle, FileText, Users, BarChart3, HelpCircle, Calendar, Clock, ShieldCheck } from 'lucide-react';
+import AdminStudentBatchModal from '../components/AdminStudentBatchModal';
+import { PlusCircle, FileText, Users, BarChart3, HelpCircle, Calendar, Clock, ShieldCheck, Layers } from 'lucide-react';
 
 export default function FacultyDashboard() {
   const { user } = useAuth();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [facultyModalOpen, setFacultyModalOpen] = useState(false);
+  const [studentBatchModalOpen, setStudentBatchModalOpen] = useState(false);
 
   useEffect(() => {
     fetchExams();
@@ -37,14 +39,24 @@ export default function FacultyDashboard() {
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           {user?.role === 'ROLE_ADMIN' && (
-            <button
-              onClick={() => setFacultyModalOpen(true)}
-              className="btn btn-secondary"
-              style={{ borderColor: '#dc2626', color: '#dc2626' }}
-            >
-              <ShieldCheck size={18} />
-              <span>Manage Faculty (Admin)</span>
-            </button>
+            <>
+              <button
+                onClick={() => setStudentBatchModalOpen(true)}
+                className="btn btn-secondary"
+                style={{ borderColor: '#2563eb', color: '#2563eb' }}
+              >
+                <Layers size={18} />
+                <span>Student & Batch Directory</span>
+              </button>
+              <button
+                onClick={() => setFacultyModalOpen(true)}
+                className="btn btn-secondary"
+                style={{ borderColor: '#dc2626', color: '#dc2626' }}
+              >
+                <ShieldCheck size={18} />
+                <span>Manage Faculty</span>
+              </button>
+            </>
           )}
           <Link to="/faculty/exam/create" className="btn btn-primary">
             <PlusCircle size={18} />
@@ -113,6 +125,10 @@ export default function FacultyDashboard() {
 
       {facultyModalOpen && (
         <AdminFacultyModal onClose={() => setFacultyModalOpen(false)} />
+      )}
+
+      {studentBatchModalOpen && (
+        <AdminStudentBatchModal onClose={() => setStudentBatchModalOpen(false)} />
       )}
     </div>
   );

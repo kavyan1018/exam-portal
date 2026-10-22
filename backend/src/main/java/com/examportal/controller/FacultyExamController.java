@@ -10,6 +10,8 @@ import com.examportal.security.UserDetailsImpl;
 import com.examportal.service.ExamService;
 import com.examportal.service.ProctoringService;
 import com.examportal.service.ResultService;
+import com.examportal.service.AiQuestionGeneratorService;
+import com.examportal.service.EmailService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +35,15 @@ public class FacultyExamController {
 
     @Autowired
     private ProctoringService proctoringService;
+
+    @Autowired
+    private AiQuestionGeneratorService aiQuestionGeneratorService;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private com.examportal.repository.ExamAttemptRepository attemptRepository;
 
     @GetMapping
     public ResponseEntity<List<ExamDto>> getMyExams(@AuthenticationPrincipal UserDetailsImpl userDetails) {
@@ -74,6 +85,67 @@ public class FacultyExamController {
     @GetMapping("/{id}/results")
     public ResponseEntity<List<ExamResultDto>> getExamResults(@PathVariable Long id) {
         return ResponseEntity.ok(resultService.getResultsForExam(id));
+    }
+
+    @PostMapping("/{id}/questions/bulk-import")
+    public ResponseEntity<Map<String, Object>> bulkImportQuestions(@PathVariable Long id, @RequestBody com.examportal.dto.exam.BulkImportRequest request) {
+        List<QuestionDto> questionsToSave;
+        if (request.getParsedQuestions() != null && !request.getParsedQuestions().isEmpty()) {
+            questionsToSave = request.getParsedQuestions();
+        } else {
+            questionsToSave = aiQuestionGeneratorService.parseBulkText(request.getRawText());
+        }
+
+        int added = 0;
+        for (QuestionDto q : questionsToSave) {
+            examService.addQuestion(id, q);
+            added++;
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Successfully imported " + added + " questions into exam",
+                "importedCount", added
+        ));
+    }
+
+    @PostMapping("/{id}/questions/parse-preview")
+    public ResponseEntity<List<QuestionDto>> parseBulkPreview(@RequestBody com.examportal.dto.exam.BulkImportRequest request) {
+        List<QuestionDto> parsed = aiQuestionGeneratorService.parseBulkText(request.getRawText());
+        return ResponseEntity.ok(parsed);
+    }
+
+    @PostMapping("/{id}/questions/ai-generate")
+    public ResponseEntity<Map<String, Object>> aiGenerateQuestions(@PathVariable Long id, @RequestBody com.examportal.dto.exam.AiGenerateRequest request) {
+        List<QuestionDto> generated = aiQuestionGeneratorService.generateQuestions(request);
+
+        int added = 0;
+        for (QuestionDto q : generated) {
+            examService.addQuestion(id, q);
+            added++;
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "AI successfully authored and attached " + added + " questions to your exam",
+                "generatedCount", added
+        ));
+    }
+
+    @PostMapping("/{id}/release-and-email-results")
+    public ResponseEntity<Map<String, Object>> releaseAndEmailResults(@PathVariable Long id) {
+        List<com.examportal.model.ExamAttempt> attempts = attemptRepository.findByExamIdOrderByStartedAtDesc(id);
+
+        int sentCount = 0;
+        for (com.examportal.model.ExamAttempt attempt : attempts) {
+            if (attempt.getStatus() != com.examportal.model.AttemptStatus.IN_PROGRESS) {
+                boolean sent = emailService.sendExamResultEmail(attempt);
+                if (sent) sentCount++;
+            }
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Evaluation complete. Emailed scorecards to " + sentCount + " students.",
+                "emailsSent", sentCount
+        ));
     }
 
     @GetMapping("/attempts/{attemptId}/proctoring-logs")
