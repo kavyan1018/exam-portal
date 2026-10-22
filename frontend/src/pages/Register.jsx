@@ -79,13 +79,13 @@ export default function Register() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Roll Number / Student ID</label>
+            <label className="form-label">Batch Name</label>
             <input
               type="text"
               name="studentId"
               required
               className="form-input"
-              placeholder="e.g. CS-2026-089"
+              placeholder="e.g. Batch A (2026), Section 1"
               value={formData.studentId}
               onChange={handleChange}
             />

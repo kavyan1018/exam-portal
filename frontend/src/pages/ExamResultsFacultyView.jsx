@@ -30,7 +30,7 @@ export default function ExamResultsFacultyView() {
   const exportCsv = () => {
     if (results.length === 0) return;
 
-    const headers = ['Student Name', 'Roll Number', 'Status', 'Score', 'Total Marks', 'Passing Marks', 'Result', 'Correct Answers', 'Incorrect Answers', 'Violations Logged'];
+    const headers = ['Student Name', 'Batch Name', 'Status', 'Score', 'Total Marks', 'Passing Marks', 'Result', 'Correct Answers', 'Incorrect Answers', 'Violations Logged'];
     const rows = results.map(r => [
       `"${r.studentName}"`,
       `"${r.studentId || ''}"`,
@@ -86,7 +86,7 @@ export default function ExamResultsFacultyView() {
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>
                   <th style={{ padding: '1rem' }}>Student Name</th>
-                  <th style={{ padding: '1rem' }}>Roll Number</th>
+                  <th style={{ padding: '1rem' }}>Batch Name</th>
                   <th style={{ padding: '1rem' }}>Score</th>
                   <th style={{ padding: '1rem' }}>Status</th>
                   <th style={{ padding: '1rem' }}>Correct / Total</th>

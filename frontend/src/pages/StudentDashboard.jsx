@@ -45,7 +45,7 @@ export default function StudentDashboard() {
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>Welcome, {user?.fullName}!</h1>
           <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.2rem' }}>
-            Roll Number: <strong style={{ color: '#0f172a' }}>{user?.studentId || 'N/A'}</strong> | Email: {user?.email}
+            Batch Name: <strong style={{ color: '#0f172a' }}>{user?.studentId || 'N/A'}</strong> | Email: {user?.email}
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#eff6ff', padding: '0.5rem 1rem', borderRadius: '8px', color: '#1e40af', fontSize: '0.85rem' }}>

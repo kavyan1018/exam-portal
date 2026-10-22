@@ -82,7 +82,7 @@ export default function LiveMonitorView() {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '1rem' }}>Student / Roll No</th>
+                  <th style={{ padding: '1rem' }}>Student / Batch Name</th>
                   <th style={{ padding: '1rem' }}>Status</th>
                   <th style={{ padding: '1rem' }}>Time Remaining</th>
                   <th style={{ padding: '1rem' }}>Answered</th>
@@ -100,7 +100,7 @@ export default function LiveMonitorView() {
                     <tr key={att.attemptId} style={{ borderBottom: '1px solid #f1f5f9', background: isDisqualified ? '#fef2f2' : 'white' }}>
                       <td style={{ padding: '1rem' }}>
                         <div style={{ fontWeight: 600, color: '#0f172a' }}>{att.studentName}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{att.rollNumber || att.studentEmail}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Batch: {att.rollNumber || 'General'}</div>
                       </td>
 
                       <td style={{ padding: '1rem' }}>

@@ -29,7 +29,7 @@ export default function AttemptProctoringLogsModal({ attempt, onClose }) {
               Proctoring Audit: {attempt.studentName}
             </h3>
             <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
-              Roll: {attempt.rollNumber || 'N/A'} | Total Violations: <strong style={{ color: attempt.violationCount > 0 ? '#dc2626' : '#16a34a' }}>{attempt.violationCount}</strong>
+              Batch: {attempt.rollNumber || 'General'} | Total Violations: <strong style={{ color: attempt.violationCount > 0 ? '#dc2626' : '#16a34a' }}>{attempt.violationCount}</strong>
             </span>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
