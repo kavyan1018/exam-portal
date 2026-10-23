@@ -27,6 +27,11 @@ public class StudentAnswer {
     @JoinColumn(name = "selected_option_id")
     private Option selectedOption;
 
+    @Column(columnDefinition = "TEXT")
+    private String textAnswer;
+
+    private String codeLanguage;
+
     private boolean isMarkedForReview = false;
 
     private LocalDateTime lastSavedAt = LocalDateTime.now();
@@ -52,6 +57,12 @@ public class StudentAnswer {
 
     public Option getSelectedOption() { return selectedOption; }
     public void setSelectedOption(Option selectedOption) { this.selectedOption = selectedOption; }
+
+    public String getTextAnswer() { return textAnswer; }
+    public void setTextAnswer(String textAnswer) { this.textAnswer = textAnswer; }
+
+    public String getCodeLanguage() { return codeLanguage; }
+    public void setCodeLanguage(String codeLanguage) { this.codeLanguage = codeLanguage; }
 
     public boolean isMarkedForReview() { return isMarkedForReview; }
     public void setMarkedForReview(boolean markedForReview) { isMarkedForReview = markedForReview; }

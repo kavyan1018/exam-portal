@@ -19,6 +19,8 @@ public class StartExamResponse {
     private AttemptStatus status;
     private List<QuestionDto> questions;
     private Map<Long, Long> existingAnswers; // questionId -> selectedOptionId
+    private Map<Long, String> existingTextAnswers; // questionId -> textAnswer / code
+    private Map<Long, String> existingCodeLanguages; // questionId -> codeLanguage
     private Map<Long, Boolean> reviewFlags;   // questionId -> isMarkedForReview
 
     public StartExamResponse() {}
@@ -55,6 +57,12 @@ public class StartExamResponse {
 
     public Map<Long, Long> getExistingAnswers() { return existingAnswers; }
     public void setExistingAnswers(Map<Long, Long> existingAnswers) { this.existingAnswers = existingAnswers; }
+
+    public Map<Long, String> getExistingTextAnswers() { return existingTextAnswers; }
+    public void setExistingTextAnswers(Map<Long, String> existingTextAnswers) { this.existingTextAnswers = existingTextAnswers; }
+
+    public Map<Long, String> getExistingCodeLanguages() { return existingCodeLanguages; }
+    public void setExistingCodeLanguages(Map<Long, String> existingCodeLanguages) { this.existingCodeLanguages = existingCodeLanguages; }
 
     public Map<Long, Boolean> getReviewFlags() { return reviewFlags; }
     public void setReviewFlags(Map<Long, Boolean> reviewFlags) { this.reviewFlags = reviewFlags; }

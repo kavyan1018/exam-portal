@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/client';
+import CodeCompilerWorkspace from '../components/CodeCompilerWorkspace';
 import {
   Clock,
   AlertTriangle,
@@ -21,6 +22,8 @@ export default function ExamTakingView() {
   const [examData, setExamData] = useState(null);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({}); // questionId -> optionId
+  const [textAnswers, setTextAnswers] = useState({});         // questionId -> string
+  const [codeLanguages, setCodeLanguages] = useState({});     // questionId -> string
   const [reviewFlags, setReviewFlags] = useState({});         // questionId -> boolean
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [violations, setViolations] = useState(0);
@@ -54,6 +57,8 @@ export default function ExamTakingView() {
         setExamData(res.data);
         setRemainingSeconds(res.data.remainingSeconds);
         setSelectedAnswers(res.data.existingAnswers || {});
+        setTextAnswers(res.data.existingTextAnswers || {});
+        setCodeLanguages(res.data.existingCodeLanguages || {});
         setReviewFlags(res.data.reviewFlags || {});
         setLoading(false);
 
@@ -286,7 +291,23 @@ export default function ExamTakingView() {
     const currentQ = examData.questions[currentIdx];
     const newAnswers = { ...selectedAnswers, [currentQ.id]: optionId };
     setSelectedAnswers(newAnswers);
-    saveAnswerToServer(currentQ.id, optionId, !!reviewFlags[currentQ.id]);
+    saveAnswerToServer(currentQ.id, optionId, !!reviewFlags[currentQ.id], null, null);
+  };
+
+  const handleSaveTextAnswer = async (textVal) => {
+    const currentQ = examData.questions[currentIdx];
+    const newTexts = { ...textAnswers, [currentQ.id]: textVal };
+    setTextAnswers(newTexts);
+    saveAnswerToServer(currentQ.id, null, !!reviewFlags[currentQ.id], textVal, null);
+  };
+
+  const handleSaveCodeAnswer = async (codeVal, langVal) => {
+    const currentQ = examData.questions[currentIdx];
+    const newTexts = { ...textAnswers, [currentQ.id]: codeVal };
+    const newLangs = { ...codeLanguages, [currentQ.id]: langVal };
+    setTextAnswers(newTexts);
+    setCodeLanguages(newLangs);
+    saveAnswerToServer(currentQ.id, null, !!reviewFlags[currentQ.id], codeVal, langVal);
   };
 
   const handleClearAnswer = async () => {
@@ -294,23 +315,36 @@ export default function ExamTakingView() {
     const newAnswers = { ...selectedAnswers };
     delete newAnswers[currentQ.id];
     setSelectedAnswers(newAnswers);
-    saveAnswerToServer(currentQ.id, null, !!reviewFlags[currentQ.id]);
+
+    const newTexts = { ...textAnswers };
+    delete newTexts[currentQ.id];
+    setTextAnswers(newTexts);
+
+    saveAnswerToServer(currentQ.id, null, !!reviewFlags[currentQ.id], null, null);
   };
 
   const handleToggleReview = async () => {
     const currentQ = examData.questions[currentIdx];
     const updatedReview = !reviewFlags[currentQ.id];
     setReviewFlags({ ...reviewFlags, [currentQ.id]: updatedReview });
-    saveAnswerToServer(currentQ.id, selectedAnswers[currentQ.id] || null, updatedReview);
+    saveAnswerToServer(
+      currentQ.id,
+      selectedAnswers[currentQ.id] || null,
+      updatedReview,
+      textAnswers[currentQ.id] || null,
+      codeLanguages[currentQ.id] || null
+    );
   };
 
-  const saveAnswerToServer = async (questionId, optionId, isReview) => {
+  const saveAnswerToServer = async (questionId, optionId, isReview, textAnswer, codeLanguage) => {
     setSaveStatus('Saving answer...');
     try {
       await api.post(`/api/v1/student/attempts/${examData.attemptId}/save-answer`, {
         questionId,
-        selectedOptionId: optionId,
-        isMarkedForReview: isReview,
+        selectedOptionId: optionId !== undefined ? optionId : (selectedAnswers[questionId] || null),
+        textAnswer: textAnswer !== undefined ? textAnswer : (textAnswers[questionId] || null),
+        codeLanguage: codeLanguage !== undefined ? codeLanguage : (codeLanguages[questionId] || null),
+        isMarkedForReview: isReview !== undefined ? isReview : !!reviewFlags[questionId],
       });
       setSaveStatus('All changes saved');
     } catch (err) {
@@ -358,13 +392,43 @@ export default function ExamTakingView() {
     );
   }
 
-  const currentQ = examData.questions[currentIdx];
-  const totalQuestions = examData.questions.length;
-  const answeredCount = Object.keys(selectedAnswers).length;
+  const currentQ = examData?.questions?.[currentIdx];
+  const totalQuestions = examData?.questions?.length || 0;
+
+  const isQuestionAnswered = (qId) => {
+    return !!selectedAnswers[qId] || (!!textAnswers[qId] && textAnswers[qId].trim().length > 0);
+  };
+
+  const answeredCount = examData?.questions?.filter(q => isQuestionAnswered(q.id)).length || 0;
   const minutes = Math.floor(remainingSeconds / 60);
   const seconds = remainingSeconds % 60;
   const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   const isTimeCritical = remainingSeconds < 300; // < 5 mins
+
+  const getQuestionSection = (q) => {
+    if (!q) return 'A';
+    const text = q.questionText || '';
+    if (text.includes('Section D') || text.includes('Programming Questions') || text.toLowerCase().includes('section d:')) {
+      return 'D';
+    }
+    if (text.includes('Section C') || text.includes('Predict the Output') || text.toLowerCase().includes('section c:')) {
+      return 'C';
+    }
+    if (text.includes('Section B') || text.includes('Short Answer') || text.toLowerCase().includes('section b:')) {
+      return 'B';
+    }
+    return 'A'; // Default Section A: MCQs
+  };
+
+  const getCleanQuestionText = (text, section) => {
+    if (!text) return '';
+    if (section === 'D') {
+      return text.replace(/\n\s*Which (program implementation|code snippet).+$/is, '').trim();
+    }
+    return text;
+  };
+
+  const currentSection = getQuestionSection(currentQ);
 
   return (
     <div className="exam-fullscreen-container">
@@ -451,62 +515,125 @@ export default function ExamTakingView() {
             </span>
           </div>
 
-          <p style={{ fontSize: '1.15rem', color: '#0f172a', fontWeight: 500, lineHeight: 1.6, marginBottom: '2rem' }}>
-            {currentQ.questionText}
-          </p>
+          <div style={{ fontSize: '1.15rem', color: '#0f172a', fontWeight: 500, lineHeight: 1.6, marginBottom: '1.5rem', whiteSpace: 'pre-wrap' }}>
+            {getCleanQuestionText(currentQ.questionText, currentSection)}
+          </div>
 
-          {/* MCQ Options */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginBottom: '2.5rem' }}>
-            {currentQ.options.map((opt, oIndex) => {
-              const isSelected = selectedAnswers[currentQ.id] === opt.id;
-              const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
-              return (
-                <div
-                  key={opt.id}
-                  onClick={() => handleSelectOption(opt.id)}
-                  style={{
-                    padding: '1rem 1.25rem',
-                    borderRadius: '8px',
-                    border: `2px solid ${isSelected ? '#2563eb' : '#e2e8f0'}`,
-                    background: isSelected ? '#eff6ff' : 'white',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    transition: 'all 0.15s ease',
-                  }}
+          {/* Section D: Built-in Multi-Language Code Compiler Workspace */}
+          {currentSection === 'D' && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <CodeCompilerWorkspace
+                questionId={currentQ.id}
+                initialCode={textAnswers[currentQ.id] || ''}
+                initialLanguage={codeLanguages[currentQ.id] || 'javascript'}
+                onSaveAnswer={(codeVal, langVal) => handleSaveCodeAnswer(codeVal, langVal)}
+                isSaved={!!textAnswers[currentQ.id]}
+              />
+            </div>
+          )}
+
+          {/* Section B & C: Written Response Input */}
+          {(currentSection === 'B' || currentSection === 'C') && (
+            <div style={{ marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1e293b' }}>
+                  {currentSection === 'C' ? 'Predicted Console Output:' : 'Your Written Answer / Explanation:'}
+                </label>
+                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                  {(textAnswers[currentQ.id] || '').length} characters
+                </span>
+              </div>
+              <textarea
+                value={textAnswers[currentQ.id] || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setTextAnswers(prev => ({ ...prev, [currentQ.id]: val }));
+                }}
+                onBlur={(e) => handleSaveTextAnswer(e.target.value)}
+                placeholder={currentSection === 'C' ? 'Type the exact output predicted from the snippet above...' : 'Type your detailed answer here... Your response is automatically saved.'}
+                rows={currentSection === 'C' ? 5 : 8}
+                style={{
+                  width: '100%',
+                  padding: '0.85rem 1rem',
+                  borderRadius: '8px',
+                  border: '2px solid #cbd5e1',
+                  fontSize: '0.95rem',
+                  fontFamily: currentSection === 'C' ? 'Consolas, Monaco, monospace' : 'inherit',
+                  lineHeight: 1.6,
+                  outline: 'none',
+                  background: 'white',
+                  color: '#0f172a',
+                  boxSizing: 'border-box',
+                  resize: 'vertical'
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => handleSaveTextAnswer(textAnswers[currentQ.id] || '')}
+                  className="btn btn-primary btn-sm"
                 >
-                  <span
+                  <Check size={14} />
+                  <span>Save Answer</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Section A: Traditional MCQ Options */}
+          {currentSection === 'A' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginBottom: '2.5rem' }}>
+              {currentQ.options && currentQ.options.map((opt, oIndex) => {
+                const isSelected = selectedAnswers[currentQ.id] === opt.id;
+                const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
+                return (
+                  <div
+                    key={opt.id}
+                    onClick={() => handleSelectOption(opt.id)}
                     style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      background: isSelected ? '#2563eb' : '#f1f5f9',
-                      color: isSelected ? 'white' : '#64748b',
+                      padding: '1rem 1.25rem',
+                      borderRadius: '8px',
+                      border: `2px solid ${isSelected ? '#2563eb' : '#e2e8f0'}`,
+                      background: isSelected ? '#eff6ff' : 'white',
+                      cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 700,
-                      fontSize: '0.85rem',
-                      flexShrink: 0,
+                      gap: '1rem',
+                      transition: 'all 0.15s ease',
                     }}
                   >
-                    {optionLetters[oIndex] || oIndex + 1}
-                  </span>
-                  <span style={{ fontSize: '1rem', color: isSelected ? '#1e40af' : '#1e293b', fontWeight: isSelected ? 600 : 400 }}>
-                    {opt.optionText}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                    <span
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        background: isSelected ? '#2563eb' : '#f1f5f9',
+                        color: isSelected ? 'white' : '#64748b',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {optionLetters[oIndex] || oIndex + 1}
+                    </span>
+                    <span style={{ fontSize: '1rem', color: isSelected ? '#1e40af' : '#1e293b', fontWeight: isSelected ? 600 : 400 }}>
+                      {opt.optionText}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Action Navigation Buttons */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button
                 onClick={handleClearAnswer}
-                disabled={!selectedAnswers[currentQ.id]}
+                disabled={!isQuestionAnswered(currentQ.id)}
                 className="btn btn-secondary btn-sm"
               >
                 Clear Response
@@ -574,7 +701,7 @@ export default function ExamTakingView() {
           {/* Palette Grid */}
           <div className="palette-grid">
             {examData.questions.map((q, index) => {
-              const isAnswered = !!selectedAnswers[q.id];
+              const isAnswered = isQuestionAnswered(q.id);
               const isReviewed = !!reviewFlags[q.id];
               const isCurrent = currentIdx === index;
 

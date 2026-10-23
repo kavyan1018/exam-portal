@@ -131,14 +131,24 @@ public class ExamTakingService {
         // Load existing answers
         List<StudentAnswer> answers = studentAnswerRepository.findByAttemptId(attempt.getId());
         Map<Long, Long> existingMap = new HashMap<>();
+        Map<Long, String> existingTextMap = new HashMap<>();
+        Map<Long, String> existingLangMap = new HashMap<>();
         Map<Long, Boolean> reviewMap = new HashMap<>();
         for (StudentAnswer a : answers) {
             if (a.getSelectedOption() != null) {
                 existingMap.put(a.getQuestion().getId(), a.getSelectedOption().getId());
             }
+            if (a.getTextAnswer() != null) {
+                existingTextMap.put(a.getQuestion().getId(), a.getTextAnswer());
+            }
+            if (a.getCodeLanguage() != null) {
+                existingLangMap.put(a.getQuestion().getId(), a.getCodeLanguage());
+            }
             reviewMap.put(a.getQuestion().getId(), a.isMarkedForReview());
         }
         response.setExistingAnswers(existingMap);
+        response.setExistingTextAnswers(existingTextMap);
+        response.setExistingCodeLanguages(existingLangMap);
         response.setReviewFlags(reviewMap);
 
         return response;
@@ -210,6 +220,12 @@ public class ExamTakingService {
         Optional<StudentAnswer> existingAnswer = studentAnswerRepository.findByAttemptIdAndQuestionId(attemptId, request.getQuestionId());
         StudentAnswer answer = existingAnswer.orElseGet(() -> new StudentAnswer(attempt, question, null, false));
         answer.setSelectedOption(option);
+        if (request.getTextAnswer() != null) {
+            answer.setTextAnswer(request.getTextAnswer());
+        }
+        if (request.getCodeLanguage() != null) {
+            answer.setCodeLanguage(request.getCodeLanguage());
+        }
         answer.setMarkedForReview(request.isMarkedForReview());
         answer.setLastSavedAt(LocalDateTime.now());
         studentAnswerRepository.save(answer);
