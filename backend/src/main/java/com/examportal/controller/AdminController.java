@@ -30,6 +30,9 @@ public class AdminController {
     @Autowired
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private com.examportal.repository.ExamAttemptRepository examAttemptRepository;
+
     @GetMapping("/faculty")
     public ResponseEntity<List<UserDto>> listFacultyMembers() {
         List<User> facultyList = userRepository.findByRole(Role.ROLE_FACULTY);
@@ -138,5 +141,64 @@ public class AdminController {
                 "message", "Assigned " + updatedCount + " students to " + newBatch,
                 "updatedCount", updatedCount
         ));
+    }
+
+    @PutMapping("/students/{id}/remove-batch")
+    public ResponseEntity<UserDto> removeStudentFromBatch(@PathVariable Long id) {
+        User student = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Student not found"));
+
+        if (student.getRole() != Role.ROLE_STUDENT) {
+            throw new IllegalArgumentException("Target user is not a student");
+        }
+
+        student.setStudentId("Unassigned");
+        User updated = userRepository.save(student);
+        return ResponseEntity.ok(new UserDto(updated.getId(), updated.getFullName(), updated.getEmail(), updated.getRole(), updated.getStudentId()));
+    }
+
+    @PostMapping("/students/bulk-remove-batch")
+    public ResponseEntity<Map<String, Object>> bulkRemoveBatch(@RequestBody Map<String, Object> payload) {
+        List<Integer> studentIds = (List<Integer>) payload.get("studentIds");
+
+        if (studentIds == null || studentIds.isEmpty()) {
+            throw new IllegalArgumentException("Student IDs are required");
+        }
+
+        int updatedCount = 0;
+        for (Integer sId : studentIds) {
+            userRepository.findById(sId.longValue()).ifPresent(u -> {
+                if (u.getRole() == Role.ROLE_STUDENT) {
+                    u.setStudentId("Unassigned");
+                    userRepository.save(u);
+                }
+            });
+            updatedCount++;
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Removed " + updatedCount + " students from their batches",
+                "updatedCount", updatedCount
+        ));
+    }
+
+    @DeleteMapping("/students/{id}")
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<Map<String, String>> deleteStudent(@PathVariable Long id) {
+        User student = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Student not found"));
+
+        if (student.getRole() != Role.ROLE_STUDENT) {
+            throw new IllegalArgumentException("Cannot delete non-student user through this endpoint");
+        }
+
+        // Clean up any attempts and student answers to prevent foreign key issues
+        List<com.examportal.model.ExamAttempt> attempts = examAttemptRepository.findByUserIdOrderByStartedAtDesc(id);
+        if (attempts != null && !attempts.isEmpty()) {
+            examAttemptRepository.deleteAll(attempts);
+        }
+
+        userRepository.delete(student);
+        return ResponseEntity.ok(Map.of("message", "Student account deleted successfully"));
     }
 }

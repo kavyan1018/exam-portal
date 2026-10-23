@@ -4,7 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import AdminFacultyModal from '../components/AdminFacultyModal';
 import AdminStudentBatchModal from '../components/AdminStudentBatchModal';
-import { PlusCircle, FileText, Users, BarChart3, HelpCircle, Calendar, Clock, ShieldCheck, Layers, Lock, Unlock, Trash2 } from 'lucide-react';
+import BatchAttendanceModal from '../components/BatchAttendanceModal';
+import { PlusCircle, FileText, Users, BarChart3, HelpCircle, Calendar, Clock, ShieldCheck, Layers, Lock, Unlock, Trash2, ClipboardCheck } from 'lucide-react';
 
 export default function FacultyDashboard() {
   const { user } = useAuth();
@@ -12,6 +13,7 @@ export default function FacultyDashboard() {
   const [loading, setLoading] = useState(true);
   const [facultyModalOpen, setFacultyModalOpen] = useState(false);
   const [studentBatchModalOpen, setStudentBatchModalOpen] = useState(false);
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
 
   useEffect(() => {
     fetchExams();
@@ -77,6 +79,14 @@ export default function FacultyDashboard() {
               </button>
             </>
           )}
+          <button
+            onClick={() => setAttendanceModalOpen(true)}
+            className="btn btn-secondary"
+            style={{ borderColor: '#059669', color: '#059669', fontWeight: 600 }}
+          >
+            <ClipboardCheck size={18} />
+            <span>Batch Attendance</span>
+          </button>
           <Link to="/faculty/exam/create" className="btn btn-primary">
             <PlusCircle size={18} />
             <span>Create New Exam</span>
@@ -169,6 +179,10 @@ export default function FacultyDashboard() {
 
       {studentBatchModalOpen && (
         <AdminStudentBatchModal onClose={() => setStudentBatchModalOpen(false)} />
+      )}
+
+      {attendanceModalOpen && (
+        <BatchAttendanceModal onClose={() => setAttendanceModalOpen(false)} />
       )}
     </div>
   );

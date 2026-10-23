@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/client';
-import { X, Users, UserPlus, Layers, Search, CheckSquare, Square, Edit2, Check } from 'lucide-react';
+import { X, Users, UserPlus, Layers, Search, CheckSquare, Square, Edit2, Check, UserMinus, Trash2 } from 'lucide-react';
 
 export default function AdminStudentBatchModal({ onClose }) {
   const [students, setStudents] = useState([]);
@@ -44,7 +44,7 @@ export default function AdminStudentBatchModal({ onClose }) {
 
     try {
       await api.post('/api/v1/admin/students', newStudent);
-      setMessage(`Student ${newStudent.fullName} enrolled into batch "${newStudent.studentId}"!`);
+      setMessage(`Student ${newStudent.fullName} enrolled into batch "${newStudent.studentId || 'General Batch'}"!`);
       setNewStudent({ fullName: '', email: '', password: '', studentId: '' });
       fetchStudents();
     } catch (err) {
@@ -60,9 +60,33 @@ export default function AdminStudentBatchModal({ onClose }) {
         batch: editingBatchValue,
       });
       setEditingStudentId(null);
+      setMessage(`Batch updated successfully.`);
       fetchStudents();
     } catch (err) {
       alert("Failed to update batch");
+    }
+  };
+
+  const handleRemoveSingleFromBatch = async (student) => {
+    if (!window.confirm(`Remove ${student.fullName} from batch "${student.studentId || 'General Batch'}"?`)) return;
+    try {
+      await api.put(`/api/v1/admin/students/${student.id}/remove-batch`);
+      setMessage(`Removed ${student.fullName} from batch.`);
+      fetchStudents();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to remove student from batch");
+    }
+  };
+
+  const handleDeleteStudent = async (student) => {
+    if (!window.confirm(`Permanently delete student account "${student.fullName}" (${student.email}) from portal?`)) return;
+    try {
+      await api.delete(`/api/v1/admin/students/${student.id}`);
+      setMessage(`Student account "${student.fullName}" deleted successfully.`);
+      setSelectedStudentIds(prev => prev.filter(id => id !== student.id));
+      fetchStudents();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete student account");
     }
   };
 
@@ -83,6 +107,26 @@ export default function AdminStudentBatchModal({ onClose }) {
       fetchStudents();
     } catch (err) {
       alert("Failed to bulk assign batch");
+    }
+  };
+
+  const handleBulkRemoveBatch = async () => {
+    if (selectedStudentIds.length === 0) {
+      alert("Please select at least one student to remove from their batch.");
+      return;
+    }
+
+    if (!window.confirm(`Remove ${selectedStudentIds.length} selected student(s) from their assigned batches?`)) return;
+
+    try {
+      await api.post('/api/v1/admin/students/bulk-remove-batch', {
+        studentIds: selectedStudentIds,
+      });
+      setMessage(`Successfully removed ${selectedStudentIds.length} students from their batches.`);
+      setSelectedStudentIds([]);
+      fetchStudents();
+    } catch (err) {
+      alert("Failed to bulk remove students from batch");
     }
   };
 
@@ -108,13 +152,18 @@ export default function AdminStudentBatchModal({ onClose }) {
   const filteredStudents = students.filter(s => {
     const matchesSearch = s.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           s.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesBatch = selectedBatchFilter ? s.studentId === selectedBatchFilter : true;
+    let matchesBatch = true;
+    if (selectedBatchFilter === '__UNASSIGNED__') {
+      matchesBatch = !s.studentId || s.studentId === 'Unassigned';
+    } else if (selectedBatchFilter) {
+      matchesBatch = s.studentId === selectedBatchFilter;
+    }
     return matchesSearch && matchesBatch;
   });
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '900px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+      <div className="modal-content" style={{ maxWidth: '980px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -220,19 +269,20 @@ export default function AdminStudentBatchModal({ onClose }) {
               />
               <select
                 className="form-select"
-                style={{ padding: '0.45rem', fontSize: '0.85rem', width: '180px' }}
+                style={{ padding: '0.45rem', fontSize: '0.85rem', width: '200px' }}
                 value={selectedBatchFilter}
                 onChange={(e) => setSelectedBatchFilter(e.target.value)}
               >
                 <option value="">All Batches ({students.length})</option>
+                <option value="__UNASSIGNED__">Unassigned / No Batch</option>
                 {allBatches.map(b => (
                   <option key={b} value={b}>{b}</option>
                 ))}
               </select>
             </div>
 
-            {/* Bulk Batch Move */}
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {/* Bulk Batch Actions */}
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
                 Selected: <strong>{selectedStudentIds.length}</strong>
               </span>
@@ -240,7 +290,7 @@ export default function AdminStudentBatchModal({ onClose }) {
                 type="text"
                 placeholder="Target Batch Name"
                 className="form-input"
-                style={{ padding: '0.45rem', fontSize: '0.85rem', width: '160px' }}
+                style={{ padding: '0.45rem', fontSize: '0.85rem', width: '150px' }}
                 value={targetBulkBatch}
                 onChange={(e) => setTargetBulkBatch(e.target.value)}
               />
@@ -252,6 +302,17 @@ export default function AdminStudentBatchModal({ onClose }) {
               >
                 <Layers size={14} />
                 <span>Move to Batch</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkRemoveBatch}
+                disabled={selectedStudentIds.length === 0}
+                className="btn btn-secondary btn-sm"
+                style={{ color: '#dc2626', borderColor: '#fca5a5' }}
+                title="Remove selected students from their current batch"
+              >
+                <UserMinus size={14} />
+                <span>Remove from Batch</span>
               </button>
             </div>
           </div>
@@ -283,6 +344,7 @@ export default function AdminStudentBatchModal({ onClose }) {
                   {filteredStudents.map(student => {
                     const isSelected = selectedStudentIds.includes(student.id);
                     const isEditing = editingStudentId === student.id;
+                    const hasBatch = student.studentId && student.studentId !== 'Unassigned';
 
                     return (
                       <tr key={student.id} style={{ borderBottom: '1px solid #f1f5f9', background: isSelected ? '#eff6ff' : 'white' }}>
@@ -321,25 +383,49 @@ export default function AdminStudentBatchModal({ onClose }) {
                               </button>
                             </div>
                           ) : (
-                            <span className="badge badge-primary">
-                              {student.studentId || 'General Batch'}
+                            <span className={`badge ${hasBatch ? 'badge-primary' : 'badge-gray'}`}>
+                              {hasBatch ? student.studentId : 'Unassigned'}
                             </span>
                           )}
                         </td>
 
                         <td style={{ padding: '0.75rem', textAlign: 'right' }}>
                           {!isEditing ? (
-                            <button
-                              onClick={() => {
-                                setEditingStudentId(student.id);
-                                setEditingBatchValue(student.studentId || '');
-                              }}
-                              className="btn btn-secondary btn-sm"
-                              style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
-                            >
-                              <Edit2 size={12} />
-                              <span>Edit Batch</span>
-                            </button>
+                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                              <button
+                                onClick={() => {
+                                  setEditingStudentId(student.id);
+                                  setEditingBatchValue(student.studentId || '');
+                                }}
+                                className="btn btn-secondary btn-sm"
+                                style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}
+                                title="Change assigned batch"
+                              >
+                                <Edit2 size={12} />
+                                <span>Edit Batch</span>
+                              </button>
+
+                              {hasBatch && (
+                                <button
+                                  onClick={() => handleRemoveSingleFromBatch(student)}
+                                  className="btn btn-secondary btn-sm"
+                                  style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', color: '#dc2626', borderColor: '#fca5a5' }}
+                                  title="Remove from batch"
+                                >
+                                  <UserMinus size={12} />
+                                  <span>Remove from Batch</span>
+                                </button>
+                              )}
+
+                              <button
+                                onClick={() => handleDeleteStudent(student)}
+                                className="btn btn-secondary btn-sm"
+                                style={{ padding: '0.2rem 0.4rem', color: '#64748b' }}
+                                title="Delete student account"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
                           ) : (
                             <button
                               onClick={() => setEditingStudentId(null)}

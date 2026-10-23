@@ -79,7 +79,7 @@ public class SecurityConfig {
                 .requestMatchers("/", "/error", "/api/v1/auth/**", "/api/v1/health/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
-                .requestMatchers("/api/v1/faculty/**").hasAnyAuthority("ROLE_FACULTY", "ROLE_ADMIN")
+                .requestMatchers("/api/v1/faculty/**", "/api/v1/attendance/**").hasAnyAuthority("ROLE_FACULTY", "ROLE_ADMIN")
                 .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
                 .requestMatchers("/api/v1/student/**").hasAuthority("ROLE_STUDENT")
                 .anyRequest().authenticated()
