@@ -69,6 +69,12 @@ public class FacultyExamController {
         return ResponseEntity.ok(examService.updateExam(id, request));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> deleteExam(@PathVariable Long id) {
+        examService.deleteExam(id);
+        return ResponseEntity.ok(Map.of("message", "Exam deleted successfully"));
+    }
+
     @PostMapping("/{id}/questions")
     public ResponseEntity<QuestionDto> addQuestion(@PathVariable Long id, @Valid @RequestBody QuestionDto questionDto) {
         return ResponseEntity.ok(examService.addQuestion(id, questionDto));

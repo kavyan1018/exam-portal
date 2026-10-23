@@ -20,4 +20,9 @@ public interface ExamAttemptRepository extends JpaRepository<ExamAttempt, Long> 
 
     @Query("SELECT a FROM ExamAttempt a WHERE a.status = 'IN_PROGRESS' AND a.scheduledEndAt < :cutoff")
     List<ExamAttempt> findExpiredActiveAttempts(@Param("cutoff") LocalDateTime cutoff);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query("DELETE FROM ExamAttempt a WHERE a.exam.id = :examId")
+    void deleteByExamId(@Param("examId") Long examId);
 }

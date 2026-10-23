@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/client';
 import AdminFacultyModal from '../components/AdminFacultyModal';
 import AdminStudentBatchModal from '../components/AdminStudentBatchModal';
-import { PlusCircle, FileText, Users, BarChart3, HelpCircle, Calendar, Clock, ShieldCheck, Layers, Lock, Unlock } from 'lucide-react';
+import { PlusCircle, FileText, Users, BarChart3, HelpCircle, Calendar, Clock, ShieldCheck, Layers, Lock, Unlock, Trash2 } from 'lucide-react';
 
 export default function FacultyDashboard() {
   const { user } = useAuth();
@@ -34,6 +34,16 @@ export default function FacultyDashboard() {
       setExams(exams.map(e => e.id === examId ? { ...e, locked: res.data.isLocked } : e));
     } catch (err) {
       alert("Failed to toggle lock status");
+    }
+  };
+
+  const handleDeleteExam = async (examId, title) => {
+    if (!window.confirm(`Are you sure you want to remove "${title}" from the exam portal?`)) return;
+    try {
+      await api.delete(`/api/v1/faculty/exams/${examId}`);
+      setExams(exams.filter(e => e.id !== examId));
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to delete exam");
     }
   };
 
@@ -138,6 +148,15 @@ export default function FacultyDashboard() {
                   <BarChart3 size={15} />
                   <span>Results</span>
                 </Link>
+                <button
+                  onClick={() => handleDeleteExam(exam.id, exam.title)}
+                  className="btn btn-secondary btn-sm"
+                  style={{ color: '#dc2626' }}
+                  title="Remove exam"
+                >
+                  <Trash2 size={15} />
+                  <span>Delete</span>
+                </button>
               </div>
             </div>
           ))}

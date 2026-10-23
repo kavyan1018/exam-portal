@@ -33,6 +33,17 @@ public class ExamService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private com.examportal.repository.ExamAttemptRepository attemptRepository;
+
+    @Transactional
+    public void deleteExam(Long examId) {
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() -> new IllegalArgumentException("Exam not found with id: " + examId));
+        attemptRepository.deleteByExamId(examId);
+        examRepository.delete(exam);
+    }
+
     @Transactional
     public ExamDto createExam(ExamCreateRequest request, Long facultyUserId) {
         User faculty = userRepository.findById(facultyUserId)
