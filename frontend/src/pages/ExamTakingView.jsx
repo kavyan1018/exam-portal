@@ -85,9 +85,13 @@ export default function ExamTakingView() {
 
   // 2. Fullscreen Management
   const enterFullscreen = () => {
+    gracePeriodUntilRef.current = Date.now() + 10000; // 10s grace after clicking fullscreen
     const elem = document.documentElement;
     if (elem.requestFullscreen) {
-      elem.requestFullscreen().catch(() => {
+      elem.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+        wasEverFullscreenRef.current = true;
+      }).catch(() => {
         setIsFullscreen(false);
       });
     }
@@ -373,7 +377,7 @@ export default function ExamTakingView() {
               Fullscreen Mode Required
             </h2>
             <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-              This examination must remain in fullscreen mode. Exiting fullscreen has been recorded as a violation.
+              This examination requires fullscreen mode for a secure testing environment. Click below to continue your exam.
             </p>
             <button onClick={enterFullscreen} className="btn btn-primary" style={{ width: '100%', padding: '0.85rem' }}>
               <Maximize size={18} />

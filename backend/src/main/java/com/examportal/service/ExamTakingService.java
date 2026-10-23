@@ -227,7 +227,7 @@ public class ExamTakingService {
         LocalDateTime now = LocalDateTime.now();
         long remaining = Duration.between(now, attempt.getScheduledEndAt()).getSeconds();
 
-        if (remaining <= 0 && attempt.getStatus() == AttemptStatus.IN_PROGRESS) {
+        if (remaining <= -30 && attempt.getStatus() == AttemptStatus.IN_PROGRESS) {
             submitExam(attemptId, userId, AttemptStatus.AUTO_SUBMITTED);
             return new HeartbeatResponse(0, AttemptStatus.AUTO_SUBMITTED, attempt.getViolationCount(), true, now.toString());
         }
@@ -328,7 +328,7 @@ public class ExamTakingService {
     @Scheduled(fixedRate = 30000)
     @Transactional
     public void autoSubmitExpiredAttempts() {
-        LocalDateTime cutoff = LocalDateTime.now();
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(2);
         List<ExamAttempt> expired = attemptRepository.findExpiredActiveAttempts(cutoff);
         for (ExamAttempt a : expired) {
             a.setStatus(AttemptStatus.AUTO_SUBMITTED);
