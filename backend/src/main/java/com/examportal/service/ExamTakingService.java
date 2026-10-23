@@ -58,14 +58,19 @@ public class ExamTakingService {
 
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(exam.getStartWindow())) {
-            throw new IllegalStateException("Exam window has not opened yet");
+            throw new IllegalStateException("Exam window has not opened yet. Scheduled to start at: " + exam.getStartWindow());
         }
         if (now.isAfter(exam.getEndWindow())) {
-            throw new IllegalStateException("Exam window has already closed");
+            throw new IllegalStateException("Exam submission window has closed. The deadline was: " + exam.getEndWindow() + ". Please ask faculty to extend the exam end time.");
         }
 
         User student = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Student not found"));
+
+        List<Question> allExamQuestions = questionRepository.findByExamIdOrderByQuestionOrderAsc(examId);
+        if (allExamQuestions.isEmpty()) {
+            throw new IllegalStateException("This exam does not have any questions added yet. Faculty must add questions before students can start taking it.");
+        }
 
         Optional<ExamAttempt> existingOpt = attemptRepository.findByExamIdAndUserId(examId, userId);
         ExamAttempt attempt;

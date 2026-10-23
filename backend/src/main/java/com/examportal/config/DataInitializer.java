@@ -73,8 +73,17 @@ public class DataInitializer implements CommandLineRunner {
                             System.out.println(">>> [INIT] Archived CS301 exam successfully!");
                         }
                     });
+
+            // Ensure any active exam's endWindow is open so students can take it
+            examRepository.findAll().forEach(e -> {
+                if (e.getEndWindow() != null && e.getEndWindow().isBefore(LocalDateTime.now())) {
+                    e.setEndWindow(LocalDateTime.now().plusDays(30));
+                    examRepository.save(e);
+                    System.out.println(">>> [INIT] Extended exam '" + e.getTitle() + "' endWindow to +30 days!");
+                }
+            });
         } catch (Exception e) {
-            System.err.println(">>> [INIT] Could not cleanup CS301 exam: " + e.getMessage());
+            System.err.println(">>> [INIT] Error in exam cleanup/extension: " + e.getMessage());
         }
 
         if (examRepository.count() > 0) {
