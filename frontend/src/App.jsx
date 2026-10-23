@@ -12,6 +12,7 @@ import CreateExamView from './pages/CreateExamView';
 import ManageQuestionsView from './pages/ManageQuestionsView';
 import LiveMonitorView from './pages/LiveMonitorView';
 import ExamResultsFacultyView from './pages/ExamResultsFacultyView';
+import StudentPaperCheckView from './pages/StudentPaperCheckView';
 
 // Protected Route Component
 function ProtectedRoute({ children, allowedRoles }) {
@@ -130,6 +131,14 @@ export default function App() {
               element={
                 <ProtectedRoute allowedRoles={['ROLE_FACULTY', 'ROLE_ADMIN']}>
                   <ExamResultsFacultyView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/faculty/exam/:examId/paper/:attemptId"
+              element={
+                <ProtectedRoute allowedRoles={['ROLE_FACULTY', 'ROLE_ADMIN']}>
+                  <StudentPaperCheckView />
                 </ProtectedRoute>
               }
             />

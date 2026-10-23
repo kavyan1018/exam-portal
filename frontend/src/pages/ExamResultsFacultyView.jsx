@@ -280,14 +280,25 @@ export default function ExamResultsFacultyView() {
                       </span>
                     </td>
                     <td style={{ padding: '1rem', textAlign: 'right' }}>
-                      <button
-                        onClick={() => handleOpenAttemptDetails(r)}
-                        className="btn btn-secondary btn-sm"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
-                      >
-                        <Eye size={13} />
-                        <span>Inspect & Grade</span>
-                      </button>
+                      <div style={{ display: 'inline-flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                        <Link
+                          to={`/faculty/exam/${examId}/paper/${r.attemptId}`}
+                          className="btn btn-primary btn-sm"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: '#0284c7', borderColor: '#0369a1' }}
+                          title="Open full student answer sheet"
+                        >
+                          <Eye size={13} />
+                          <span>Check Paper</span>
+                        </Link>
+                        <button
+                          onClick={() => handleOpenAttemptDetails(r)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                          title="Quick preview modal"
+                        >
+                          <span>Quick Grade</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

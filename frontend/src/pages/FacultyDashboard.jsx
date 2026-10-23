@@ -154,9 +154,9 @@ export default function FacultyDashboard() {
                   <Users size={15} />
                   <span>Live Monitor</span>
                 </Link>
-                <Link to={`/faculty/exam/${exam.id}/results`} className="btn btn-secondary btn-sm">
+                <Link to={`/faculty/exam/${exam.id}/results`} className="btn btn-secondary btn-sm" style={{ color: '#0284c7', borderColor: '#bae6fd', fontWeight: 600 }}>
                   <BarChart3 size={15} />
-                  <span>Results</span>
+                  <span>Check Papers & Results</span>
                 </Link>
                 <button
                   onClick={() => handleDeleteExam(exam.id, exam.title)}

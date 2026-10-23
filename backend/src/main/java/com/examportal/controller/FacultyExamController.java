@@ -19,6 +19,7 @@ import com.examportal.model.ExamAttempt;
 import com.examportal.model.StudentAnswer;
 import com.examportal.model.AttemptStatus;
 import com.examportal.dto.attempt.QuestionEvaluationDto;
+import com.examportal.dto.attempt.StudentPaperDto;
 import java.math.BigDecimal;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -237,6 +238,11 @@ public class FacultyExamController {
     @GetMapping("/attempts/{attemptId}/evaluation-details")
     public ResponseEntity<List<QuestionEvaluationDto>> getEvaluationDetails(@PathVariable Long attemptId) {
         return ResponseEntity.ok(aiAnswerEvaluationService.getDetailedEvaluation(attemptId));
+    }
+
+    @GetMapping("/attempts/{attemptId}/paper")
+    public ResponseEntity<StudentPaperDto> getStudentPaper(@PathVariable Long attemptId) {
+        return ResponseEntity.ok(aiAnswerEvaluationService.getStudentPaper(attemptId));
     }
 
     @PostMapping("/attempts/{attemptId}/update-marks")

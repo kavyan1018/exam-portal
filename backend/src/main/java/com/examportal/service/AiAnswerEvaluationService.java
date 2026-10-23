@@ -1,6 +1,7 @@
 package com.examportal.service;
 
 import com.examportal.dto.attempt.QuestionEvaluationDto;
+import com.examportal.dto.attempt.StudentPaperDto;
 import com.examportal.model.*;
 import com.examportal.repository.ExamAttemptRepository;
 import com.examportal.repository.QuestionRepository;
@@ -290,6 +291,34 @@ public class AiAnswerEvaluationService {
 
         BigDecimal marks = BigDecimal.valueOf(Math.min(marksVal, maxMarks.doubleValue())).setScale(1, RoundingMode.HALF_UP);
         return new EvaluationResult(marks, feedbackVal);
+    }
+
+    public StudentPaperDto getStudentPaper(Long attemptId) {
+        ExamAttempt attempt = attemptRepository.findById(attemptId)
+                .orElseThrow(() -> new IllegalArgumentException("Attempt not found: " + attemptId));
+
+        Exam exam = attempt.getExam();
+        StudentPaperDto dto = new StudentPaperDto();
+        dto.setAttemptId(attempt.getId());
+        dto.setExamId(exam.getId());
+        dto.setExamTitle(exam.getTitle());
+        dto.setStudentId(attempt.getUser().getId());
+        dto.setStudentName(attempt.getUser().getFullName());
+        dto.setStudentEmail(attempt.getUser().getEmail());
+        dto.setRollNumber(attempt.getUser().getStudentId());
+        dto.setStartedAt(attempt.getStartedAt());
+        dto.setSubmittedAt(attempt.getSubmittedAt());
+        dto.setStatus(attempt.getStatus());
+        dto.setScore(attempt.getScore());
+        dto.setTotalMarks(exam.getTotalMarks());
+        dto.setPassMarks(exam.getPassMarks());
+        dto.setPassed(attempt.isPassed());
+        dto.setResultPublished(attempt.isResultPublished());
+        dto.setAiEvaluated(attempt.isAiEvaluated());
+        dto.setViolationCount(attempt.getViolationCount());
+        dto.setQuestions(getDetailedEvaluation(attemptId));
+
+        return dto;
     }
 
     public List<QuestionEvaluationDto> getDetailedEvaluation(Long attemptId) {
