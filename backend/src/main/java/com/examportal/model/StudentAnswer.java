@@ -2,6 +2,7 @@ package com.examportal.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -31,6 +32,13 @@ public class StudentAnswer {
     private String textAnswer;
 
     private String codeLanguage;
+
+    private BigDecimal marksAwarded;
+
+    @Column(columnDefinition = "TEXT")
+    private String aiFeedback;
+
+    private boolean isEvaluated = false;
 
     private boolean isMarkedForReview = false;
 
@@ -63,6 +71,15 @@ public class StudentAnswer {
 
     public String getCodeLanguage() { return codeLanguage; }
     public void setCodeLanguage(String codeLanguage) { this.codeLanguage = codeLanguage; }
+
+    public BigDecimal getMarksAwarded() { return marksAwarded; }
+    public void setMarksAwarded(BigDecimal marksAwarded) { this.marksAwarded = marksAwarded; }
+
+    public String getAiFeedback() { return aiFeedback; }
+    public void setAiFeedback(String aiFeedback) { this.aiFeedback = aiFeedback; }
+
+    public boolean isEvaluated() { return isEvaluated; }
+    public void setEvaluated(boolean evaluated) { isEvaluated = evaluated; }
 
     public boolean isMarkedForReview() { return isMarkedForReview; }
     public void setMarkedForReview(boolean markedForReview) { isMarkedForReview = markedForReview; }

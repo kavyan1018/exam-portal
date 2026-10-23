@@ -28,6 +28,9 @@ public class ResultService {
     @Autowired
     private StudentAnswerRepository studentAnswerRepository;
 
+    @Autowired
+    private AiAnswerEvaluationService aiAnswerEvaluationService;
+
     @Transactional(readOnly = true)
     public ExamResultDto getResultForStudent(Long attemptId, Long userId) {
         ExamAttempt attempt = attemptRepository.findById(attemptId)
@@ -115,6 +118,9 @@ public class ResultService {
         }
         dto.setCorrectAnswers(correct);
         dto.setIncorrectAnswers(incorrect);
+        dto.setResultPublished(attempt.isResultPublished());
+        dto.setAiEvaluated(attempt.isAiEvaluated());
+        dto.setQuestionEvaluations(aiAnswerEvaluationService.getDetailedEvaluation(attempt.getId()));
 
         return dto;
     }

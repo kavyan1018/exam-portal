@@ -43,6 +43,9 @@ public class ExamTakingService {
     @Autowired
     private ExamService examService;
 
+    @Autowired
+    private AiAnswerEvaluationService aiAnswerEvaluationService;
+
     @Transactional
     public StartExamResponse startOrResumeExam(Long examId, Long userId) {
         Exam exam = examRepository.findById(examId)
@@ -272,16 +275,21 @@ public class ExamTakingService {
 
         attempt.setStatus(finalStatus != null ? finalStatus : AttemptStatus.SUBMITTED);
         attempt.setSubmittedAt(LocalDateTime.now());
+        attempt.setResultPublished(false);
 
-        // Grade attempt
-        gradeAttempt(attempt);
+        // Run AI evaluation on answers
+        try {
+            aiAnswerEvaluationService.evaluateAttemptWithAi(attempt.getId());
+        } catch (Exception e) {
+            gradeAttempt(attempt);
+        }
 
-        attemptRepository.save(attempt);
+        attempt = attemptRepository.findById(attemptId).orElse(attempt);
 
         return new SubmitExamResponse(
                 attempt.getId(),
                 attempt.getStatus(),
-                "Exam submitted successfully",
+                "Exam submitted successfully. Answers pending AI and faculty review.",
                 attempt.getSubmittedAt(),
                 attempt.getScore(),
                 attempt.isPassed()

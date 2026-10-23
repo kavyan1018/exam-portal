@@ -11,7 +11,15 @@ import com.examportal.service.ExamService;
 import com.examportal.service.ProctoringService;
 import com.examportal.service.ResultService;
 import com.examportal.service.AiQuestionGeneratorService;
+import com.examportal.service.AiAnswerEvaluationService;
 import com.examportal.service.EmailService;
+import com.examportal.repository.ExamAttemptRepository;
+import com.examportal.repository.StudentAnswerRepository;
+import com.examportal.model.ExamAttempt;
+import com.examportal.model.StudentAnswer;
+import com.examportal.model.AttemptStatus;
+import com.examportal.dto.attempt.QuestionEvaluationDto;
+import java.math.BigDecimal;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +46,12 @@ public class FacultyExamController {
 
     @Autowired
     private AiQuestionGeneratorService aiQuestionGeneratorService;
+
+    @Autowired
+    private AiAnswerEvaluationService aiAnswerEvaluationService;
+
+    @Autowired
+    private StudentAnswerRepository studentAnswerRepository;
 
     @Autowired
     private EmailService emailService;
@@ -175,5 +189,80 @@ public class FacultyExamController {
     @GetMapping("/attempts/{attemptId}/proctoring-logs")
     public ResponseEntity<List<ProctoringLog>> getAttemptProctoringLogs(@PathVariable Long attemptId) {
         return ResponseEntity.ok(proctoringService.getLogsForAttempt(attemptId));
+    }
+
+    @PostMapping("/attempts/{attemptId}/evaluate-ai")
+    public ResponseEntity<Map<String, Object>> evaluateAttemptAi(@PathVariable Long attemptId) {
+        ExamAttempt attempt = aiAnswerEvaluationService.evaluateAttemptWithAi(attemptId);
+        return ResponseEntity.ok(Map.of(
+                "message", "AI evaluation completed successfully",
+                "score", attempt.getScore(),
+                "passed", attempt.isPassed()
+        ));
+    }
+
+    @PostMapping("/{id}/evaluate-all-ai")
+    public ResponseEntity<Map<String, Object>> evaluateAllAi(@PathVariable Long id) {
+        List<ExamAttempt> attempts = attemptRepository.findByExamIdOrderByStartedAtDesc(id);
+        int count = 0;
+        for (ExamAttempt att : attempts) {
+            if (att.getStatus() != AttemptStatus.IN_PROGRESS) {
+                aiAnswerEvaluationService.evaluateAttemptWithAi(att.getId());
+                count++;
+            }
+        }
+        return ResponseEntity.ok(Map.of(
+                "message", "AI auto-evaluated all " + count + " student submissions.",
+                "evaluatedCount", count
+        ));
+    }
+
+    @PostMapping("/{id}/publish-results")
+    public ResponseEntity<Map<String, Object>> publishResults(@PathVariable Long id) {
+        List<ExamAttempt> attempts = attemptRepository.findByExamIdOrderByStartedAtDesc(id);
+        int count = 0;
+        for (ExamAttempt att : attempts) {
+            if (att.getStatus() != AttemptStatus.IN_PROGRESS) {
+                att.setResultPublished(true);
+                attemptRepository.save(att);
+                count++;
+            }
+        }
+        return ResponseEntity.ok(Map.of(
+                "message", "Official exam results published to " + count + " students.",
+                "publishedCount", count
+        ));
+    }
+
+    @GetMapping("/attempts/{attemptId}/evaluation-details")
+    public ResponseEntity<List<QuestionEvaluationDto>> getEvaluationDetails(@PathVariable Long attemptId) {
+        return ResponseEntity.ok(aiAnswerEvaluationService.getDetailedEvaluation(attemptId));
+    }
+
+    @PostMapping("/attempts/{attemptId}/update-marks")
+    public ResponseEntity<Map<String, Object>> updateQuestionMarks(
+            @PathVariable Long attemptId,
+            @RequestBody Map<String, Object> payload) {
+        Long questionId = Long.valueOf(payload.get("questionId").toString());
+        BigDecimal marks = new BigDecimal(payload.get("marks").toString());
+        String feedback = payload.get("feedback") != null ? payload.get("feedback").toString() : null;
+
+        StudentAnswer ans = studentAnswerRepository.findByAttemptIdAndQuestionId(attemptId, questionId)
+                .orElseThrow(() -> new IllegalArgumentException("Answer not found"));
+        ans.setMarksAwarded(marks);
+        if (feedback != null) ans.setAiFeedback(feedback);
+        ans.setEvaluated(true);
+        studentAnswerRepository.save(ans);
+
+        ExamAttempt att = ans.getAttempt();
+        List<StudentAnswer> allAns = studentAnswerRepository.findByAttemptId(attemptId);
+        BigDecimal total = allAns.stream()
+                .map(a -> a.getMarksAwarded() != null ? a.getMarksAwarded() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        att.setScore(total);
+        att.setPassed(total.compareTo(att.getExam().getPassMarks()) >= 0);
+        attemptRepository.save(att);
+
+        return ResponseEntity.ok(Map.of("message", "Marks updated successfully", "newScore", total));
     }
 }

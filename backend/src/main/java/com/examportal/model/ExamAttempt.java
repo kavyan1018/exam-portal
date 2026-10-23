@@ -43,6 +43,10 @@ public class ExamAttempt {
 
     private boolean isPassed = false;
 
+    private boolean isResultPublished = false;
+
+    private boolean isAiEvaluated = false;
+
     // Stores randomized question IDs order for this attempt (comma-separated, e.g. "5,2,9,1")
     @Column(columnDefinition = "TEXT")
     private String questionOrderSequence;
@@ -84,6 +88,12 @@ public class ExamAttempt {
 
     public boolean isPassed() { return isPassed; }
     public void setPassed(boolean passed) { isPassed = passed; }
+
+    public boolean isResultPublished() { return isResultPublished; }
+    public void setResultPublished(boolean resultPublished) { isResultPublished = resultPublished; }
+
+    public boolean isAiEvaluated() { return isAiEvaluated; }
+    public void setAiEvaluated(boolean aiEvaluated) { isAiEvaluated = aiEvaluated; }
 
     public String getQuestionOrderSequence() { return questionOrderSequence; }
     public void setQuestionOrderSequence(String questionOrderSequence) { this.questionOrderSequence = questionOrderSequence; }

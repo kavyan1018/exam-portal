@@ -4,6 +4,8 @@ import com.examportal.model.AttemptStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ExamResultDto {
     private Long attemptId;
@@ -23,6 +25,9 @@ public class ExamResultDto {
     private BigDecimal passMarks;
     private boolean isPassed;
     private int violationCount;
+    private boolean resultPublished;
+    private boolean aiEvaluated;
+    private List<QuestionEvaluationDto> questionEvaluations = new ArrayList<>();
 
     public ExamResultDto() {}
 
@@ -76,4 +81,13 @@ public class ExamResultDto {
 
     public int getViolationCount() { return violationCount; }
     public void setViolationCount(int violationCount) { this.violationCount = violationCount; }
+
+    public boolean isResultPublished() { return resultPublished; }
+    public void setResultPublished(boolean resultPublished) { this.resultPublished = resultPublished; }
+
+    public boolean isAiEvaluated() { return aiEvaluated; }
+    public void setAiEvaluated(boolean aiEvaluated) { this.aiEvaluated = aiEvaluated; }
+
+    public List<QuestionEvaluationDto> getQuestionEvaluations() { return questionEvaluations; }
+    public void setQuestionEvaluations(List<QuestionEvaluationDto> questionEvaluations) { this.questionEvaluations = questionEvaluations; }
 }

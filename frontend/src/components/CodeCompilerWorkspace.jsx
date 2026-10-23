@@ -69,18 +69,8 @@ const STARTER_TEMPLATES = {
 }`,
 
   javascript: `// Write your JavaScript solution below
-// Output will be captured in the Output Console
-
 function solve() {
-  console.log("JavaScript Solution Started");
-  
-  // Example: print arithmetic operations
-  let a = 10;
-  let b = 5;
-  console.log("Sum:", a + b);
-  console.log("Difference:", a - b);
-  console.log("Multiplication:", a * b);
-  console.log("Division:", a / b);
+  // Your code here
 }
 
 solve();`,
@@ -89,8 +79,6 @@ solve();`,
 
 int main() {
     // Write your C program here
-    int a = 10, b = 20;
-    printf("Sum: %d\\n", a + b);
     return 0;
 }`,
 
@@ -99,8 +87,6 @@ using namespace std;
 
 int main() {
     // Write your C++ program here
-    int a = 10, b = 20;
-    cout << "Sum: " << (a + b) << endl;
     return 0;
 }`,
 
@@ -109,40 +95,24 @@ int main() {
 public class Solution {
     public static void main(String[] args) {
         // Write your Java program here
-        int a = 10;
-        int b = 20;
-        System.out.println("Sum: " + (a + b));
+        Scanner sc = new Scanner(System.in);
     }
 }`,
 
   python: `# Write your Python program here
 def main():
-    a = 10
-    b = 20
-    print(f"Sum: {a + b}")
+    pass
 
 if __name__ == "__main__":
     main()`,
 
-  dsa: `// Data Structures & Algorithms Solution (C++)
-// You can also write DSA algorithms in Python, Java, or C
+  dsa: `// Data Structures & Algorithms Solution
 #include <iostream>
 #include <vector>
-#include <algorithm>
 using namespace std;
 
-void solve() {
-    vector<int> nums = {4, 2, 7, 1, 9};
-    sort(nums.begin(), nums.end());
-    cout << "Sorted elements: ";
-    for (int x : nums) {
-        cout << x << " ";
-    }
-    cout << endl;
-}
-
 int main() {
-    solve();
+    // Write your solution here
     return 0;
 }`
 };
