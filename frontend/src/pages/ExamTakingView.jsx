@@ -37,6 +37,11 @@ export default function ExamTakingView() {
   const heartbeatRef = useRef(null);
   const snapshotRef = useRef(null);
 
+  // Anti-false-positive refs
+  const gracePeriodUntilRef = useRef(Date.now() + 15000); // 15-second grace window on load
+  const wasEverFullscreenRef = useRef(false);
+  const lastViolationTimeRef = useRef(0);
+
   // 1. Initialize Exam
   useEffect(() => {
     let isMounted = true;
@@ -92,7 +97,9 @@ export default function ExamTakingView() {
     const handleFullscreenChange = () => {
       const active = !!document.fullscreenElement;
       setIsFullscreen(active);
-      if (!active && !loading && examData) {
+      if (active) {
+        wasEverFullscreenRef.current = true;
+      } else if (!loading && examData && wasEverFullscreenRef.current && Date.now() > gracePeriodUntilRef.current) {
         handleViolation('FULLSCREEN_EXIT', 'Exited fullscreen examination mode');
       }
     };
@@ -103,18 +110,14 @@ export default function ExamTakingView() {
     };
   }, [loading, examData]);
 
-  // 3. Tab switch & Focus loss listeners
+  // 3. Tab switch & Devtools listeners
   useEffect(() => {
     if (loading || !examData) return;
 
     const handleVisibilityChange = () => {
-      if (document.hidden) {
+      if (document.hidden && Date.now() > gracePeriodUntilRef.current) {
         handleViolation('TAB_SWITCH', 'Switched browser tabs or minimized window');
       }
-    };
-
-    const handleBlur = () => {
-      handleViolation('WINDOW_BLUR', 'Focus lost from exam window');
     };
 
     const handleContextMenu = (e) => {
@@ -136,13 +139,11 @@ export default function ExamTakingView() {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleBlur);
     document.addEventListener('contextmenu', handleContextMenu);
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleBlur);
       document.removeEventListener('contextmenu', handleContextMenu);
       window.removeEventListener('keydown', handleKeyDown);
     };
@@ -243,6 +244,17 @@ export default function ExamTakingView() {
   // 7. Handle Violation
   const handleViolation = async (eventType, details) => {
     if (!examData) return;
+    if (Date.now() < gracePeriodUntilRef.current) {
+      console.log('Ignored violation during initial grace period:', eventType);
+      return;
+    }
+
+    // Cooldown check: ignore if another violation was registered within the last 5 seconds
+    const now = Date.now();
+    if (now - lastViolationTimeRef.current < 5000) {
+      return;
+    }
+    lastViolationTimeRef.current = now;
 
     captureAndSendSnapshot(eventType, details);
 
