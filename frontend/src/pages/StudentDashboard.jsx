@@ -87,9 +87,9 @@ export default function StudentDashboard() {
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>
                   {exam.title}
                 </h3>
-                <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '1rem', minHeight: '38px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                <div style={{ color: '#475569', fontSize: '0.825rem', marginBottom: '1rem', whiteSpace: 'pre-line', lineHeight: '1.45', background: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '6px', border: '1px solid #f1f5f9' }}>
                   {exam.description || 'No additional instructions provided.'}
-                </p>
+                </div>
 
                 <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '6px', fontSize: '0.825rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1.25rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
