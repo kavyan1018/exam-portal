@@ -24,7 +24,13 @@ export default function Login() {
         navigate('/student');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid email or password. Please verify credentials.');
+      if (err.response?.status === 401 || err.response?.data?.message) {
+        setError(err.response?.data?.message || 'Invalid email or password. Please verify credentials.');
+      } else if (err.message === 'Network Error' || !err.response) {
+        setError('Cannot connect to exam server. Free cloud instance is warming up, please retry in 10 seconds.');
+      } else {
+        setError('Sign in failed. Please verify credentials and try again.');
+      }
     } finally {
       setLoading(false);
     }

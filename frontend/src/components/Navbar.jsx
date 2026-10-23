@@ -13,7 +13,7 @@ export default function Navbar() {
     let isMounted = true;
     const checkServerHealth = async () => {
       try {
-        await api.get('/api/v1/health', { timeout: 4000 });
+        await api.get('/api/v1/health', { timeout: 60000 });
         if (isMounted) setServerStatus('online');
       } catch (err) {
         if (isMounted) setServerStatus('waking');
