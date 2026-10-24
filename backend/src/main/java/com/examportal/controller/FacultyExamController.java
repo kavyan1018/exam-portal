@@ -63,6 +63,9 @@ public class FacultyExamController {
     @Autowired
     private com.examportal.service.ExamTakingService examTakingService;
 
+    @Autowired
+    private com.examportal.repository.UserRepository userRepository;
+
     @GetMapping
     public ResponseEntity<List<ExamDto>> getMyExams(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         return ResponseEntity.ok(examService.getExamsByFaculty(userDetails.getId()));
@@ -185,6 +188,22 @@ public class FacultyExamController {
     public ResponseEntity<Map<String, String>> resetStudentAttempt(@PathVariable Long id, @PathVariable Long studentId) {
         examTakingService.resetStudentAttempt(id, studentId);
         return ResponseEntity.ok(Map.of("message", "Student attempt has been reset. The student can now take the exam fresh."));
+    }
+
+    @DeleteMapping("/students/{studentId}")
+    @org.springframework.transaction.annotation.Transactional
+    public ResponseEntity<Map<String, String>> deleteStudentByFaculty(@PathVariable Long studentId) {
+        com.examportal.model.User student = userRepository.findById(studentId)
+                .orElseThrow(() -> new IllegalArgumentException("Student not found"));
+        if (student.getRole() != com.examportal.model.Role.ROLE_STUDENT) {
+            throw new IllegalArgumentException("Cannot delete non-student accounts");
+        }
+        List<ExamAttempt> attempts = attemptRepository.findByUserIdOrderByStartedAtDesc(studentId);
+        if (attempts != null && !attempts.isEmpty()) {
+            attemptRepository.deleteAll(attempts);
+        }
+        userRepository.delete(student);
+        return ResponseEntity.ok(Map.of("message", "Student account deleted successfully"));
     }
 
     @GetMapping("/attempts/{attemptId}/proctoring-logs")

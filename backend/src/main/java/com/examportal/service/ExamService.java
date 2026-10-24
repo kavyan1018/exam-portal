@@ -37,7 +37,6 @@ public class ExamService {
     private com.examportal.repository.ExamAttemptRepository attemptRepository;
 
     @Transactional
-    @Transactional
     public void deleteExam(Long examId) {
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() -> new IllegalArgumentException("Exam not found with id: " + examId));

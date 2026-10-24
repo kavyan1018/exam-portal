@@ -81,7 +81,12 @@ export default function AdminStudentBatchModal({ onClose }) {
   const handleDeleteStudent = async (student) => {
     if (!window.confirm(`Permanently delete student account "${student.fullName}" (${student.email}) from portal?`)) return;
     try {
-      await api.delete(`/api/v1/admin/students/${student.id}`);
+      try {
+        await api.delete(`/api/v1/admin/students/${student.id}`);
+      } catch (adminErr) {
+        // Fallback to faculty endpoint
+        await api.delete(`/api/v1/faculty/exams/students/${student.id}`);
+      }
       setMessage(`Student account "${student.fullName}" deleted successfully.`);
       setSelectedStudentIds(prev => prev.filter(id => id !== student.id));
       fetchStudents();

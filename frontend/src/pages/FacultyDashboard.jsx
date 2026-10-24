@@ -59,25 +59,25 @@ export default function FacultyDashboard() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {(user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_FACULTY') && (
+            <button
+              onClick={() => setStudentBatchModalOpen(true)}
+              className="btn btn-secondary"
+              style={{ borderColor: '#2563eb', color: '#2563eb' }}
+            >
+              <Layers size={18} />
+              <span>Student & Batch Directory</span>
+            </button>
+          )}
           {user?.role === 'ROLE_ADMIN' && (
-            <>
-              <button
-                onClick={() => setStudentBatchModalOpen(true)}
-                className="btn btn-secondary"
-                style={{ borderColor: '#2563eb', color: '#2563eb' }}
-              >
-                <Layers size={18} />
-                <span>Student & Batch Directory</span>
-              </button>
-              <button
-                onClick={() => setFacultyModalOpen(true)}
-                className="btn btn-secondary"
-                style={{ borderColor: '#dc2626', color: '#dc2626' }}
-              >
-                <ShieldCheck size={18} />
-                <span>Manage Faculty</span>
-              </button>
-            </>
+            <button
+              onClick={() => setFacultyModalOpen(true)}
+              className="btn btn-secondary"
+              style={{ borderColor: '#dc2626', color: '#dc2626' }}
+            >
+              <ShieldCheck size={18} />
+              <span>Manage Faculty</span>
+            </button>
           )}
           <button
             onClick={() => setAttendanceModalOpen(true)}

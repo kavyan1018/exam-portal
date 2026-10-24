@@ -80,7 +80,7 @@ public class SecurityConfig {
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/api/v1/faculty/**", "/api/v1/attendance/**").hasAnyAuthority("ROLE_FACULTY", "ROLE_ADMIN")
-                .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
+                .requestMatchers("/api/v1/admin/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_FACULTY")
                 .requestMatchers("/api/v1/student/**").hasAuthority("ROLE_STUDENT")
                 .anyRequest().authenticated()
             );
