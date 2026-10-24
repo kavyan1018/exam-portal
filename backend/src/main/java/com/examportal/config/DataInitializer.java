@@ -32,9 +32,13 @@ public class DataInitializer implements CommandLineRunner {
     private OptionRepository optionRepository;
 
     @Autowired
+    private com.examportal.repository.StudentAnswerRepository studentAnswerRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void run(String... args) throws Exception {
         // Ensure Kavyan Nayak (Main Administrator) account always exists with requested credentials
         userRepository.findByEmailIgnoreCase("kavvyanfaculty@gmail.com").ifPresentOrElse(
@@ -82,6 +86,67 @@ public class DataInitializer implements CommandLineRunner {
                     System.out.println(">>> [INIT] Extended exam '" + e.getTitle() + "' endWindow to +30 days!");
                 }
             });
+
+            // Cleanup duplicates in JS Exam (keep only clean questions without dummy options for Sec B/C/D)
+            examRepository.findAll().stream()
+                    .filter(e -> e.getTitle() != null && e.getTitle().contains("2026CWD001(NEW)JS"))
+                    .forEach(exam -> {
+                        java.util.List<Question> questions = questionRepository.findByExamIdOrderByQuestionOrderAsc(exam.getId());
+                        if (questions.size() > 22) {
+                            System.out.println(">>> [INIT] Found duplicate questions (" + questions.size() + ") in JS Exam. Cleaning up...");
+                            java.util.Map<Integer, java.util.List<Question>> byOrder = new java.util.HashMap<>();
+                            for (Question q : questions) {
+                                byOrder.computeIfAbsent(q.getQuestionOrder(), k -> new java.util.ArrayList<>()).add(q);
+                            }
+
+                            for (java.util.Map.Entry<Integer, java.util.List<Question>> entry : byOrder.entrySet()) {
+                                java.util.List<Question> list = entry.getValue();
+                                if (list.size() > 1) {
+                                    Question cleanQ = list.get(list.size() - 1); // higher ID (has 0 options for Sec B/C/D)
+                                    Question oldQ = list.get(0); // lower ID
+
+                                    java.util.List<StudentAnswer> oldAnswers = studentAnswerRepository.findByQuestionId(oldQ.getId());
+                                    for (StudentAnswer sa : oldAnswers) {
+                                        java.util.Optional<StudentAnswer> existingClean = studentAnswerRepository.findByAttemptIdAndQuestionId(sa.getAttempt().getId(), cleanQ.getId());
+                                        if (existingClean.isPresent()) {
+                                            StudentAnswer target = existingClean.get();
+                                            if (sa.getSelectedOption() != null) {
+                                                String selText = sa.getSelectedOption().getOptionText();
+                                                if (cleanQ.getOptions() != null) {
+                                                    cleanQ.getOptions().stream()
+                                                            .filter(o -> o.getOptionText().equalsIgnoreCase(selText))
+                                                            .findFirst()
+                                                            .ifPresent(target::setSelectedOption);
+                                                }
+                                            }
+                                            if (sa.getTextAnswer() != null) target.setTextAnswer(sa.getTextAnswer());
+                                            if (sa.getMarksAwarded() != null) target.setMarksAwarded(sa.getMarksAwarded());
+                                            studentAnswerRepository.save(target);
+                                            studentAnswerRepository.delete(sa);
+                                        } else {
+                                            sa.setQuestion(cleanQ);
+                                            if (sa.getSelectedOption() != null) {
+                                                String selText = sa.getSelectedOption().getOptionText();
+                                                if (cleanQ.getOptions() != null) {
+                                                    cleanQ.getOptions().stream()
+                                                            .filter(o -> o.getOptionText().equalsIgnoreCase(selText))
+                                                            .findFirst()
+                                                            .ifPresent(sa::setSelectedOption);
+                                                }
+                                            }
+                                            studentAnswerRepository.save(sa);
+                                        }
+                                    }
+
+                                    questionRepository.delete(oldQ);
+                                }
+                            }
+
+                            exam.setTotalMarks(BigDecimal.valueOf(40.0));
+                            examRepository.save(exam);
+                            System.out.println(">>> [INIT] Successfully deduplicated JS exam to exactly 22 questions and 40 marks!");
+                        }
+                    });
         } catch (Exception e) {
             System.err.println(">>> [INIT] Error in exam cleanup/extension: " + e.getMessage());
         }

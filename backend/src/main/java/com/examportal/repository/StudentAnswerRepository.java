@@ -10,5 +10,6 @@ import java.util.Optional;
 @Repository
 public interface StudentAnswerRepository extends JpaRepository<StudentAnswer, Long> {
     List<StudentAnswer> findByAttemptId(Long attemptId);
+    List<StudentAnswer> findByQuestionId(Long questionId);
     Optional<StudentAnswer> findByAttemptIdAndQuestionId(Long attemptId, Long questionId);
 }

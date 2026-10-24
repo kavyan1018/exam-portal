@@ -293,6 +293,7 @@ public class AiAnswerEvaluationService {
         return new EvaluationResult(marks, feedbackVal);
     }
 
+    @Transactional(readOnly = true)
     public StudentPaperDto getStudentPaper(Long attemptId) {
         ExamAttempt attempt = attemptRepository.findById(attemptId)
                 .orElseThrow(() -> new IllegalArgumentException("Attempt not found: " + attemptId));
@@ -321,6 +322,7 @@ public class AiAnswerEvaluationService {
         return dto;
     }
 
+    @Transactional(readOnly = true)
     public List<QuestionEvaluationDto> getDetailedEvaluation(Long attemptId) {
         ExamAttempt attempt = attemptRepository.findById(attemptId)
                 .orElseThrow(() -> new IllegalArgumentException("Attempt not found: " + attemptId));
@@ -373,6 +375,37 @@ public class AiAnswerEvaluationService {
         }
 
         return dtos;
+    }
+
+    @Transactional
+    public BigDecimal updateQuestionMarks(Long attemptId, Long questionId, BigDecimal marks, String feedback) {
+        StudentAnswer ans = studentAnswerRepository.findByAttemptIdAndQuestionId(attemptId, questionId)
+                .orElseGet(() -> {
+                    ExamAttempt attempt = attemptRepository.findById(attemptId)
+                            .orElseThrow(() -> new IllegalArgumentException("Attempt not found: " + attemptId));
+                    Question q = questionRepository.findById(questionId)
+                            .orElseThrow(() -> new IllegalArgumentException("Question not found: " + questionId));
+                    StudentAnswer newAns = new StudentAnswer(attempt, q, null, false);
+                    return studentAnswerRepository.save(newAns);
+                });
+
+        ans.setMarksAwarded(marks);
+        if (feedback != null) ans.setAiFeedback(feedback);
+        ans.setEvaluated(true);
+        studentAnswerRepository.save(ans);
+
+        ExamAttempt att = attemptRepository.findById(attemptId)
+                .orElseThrow(() -> new IllegalArgumentException("Attempt not found: " + attemptId));
+        List<StudentAnswer> allAns = studentAnswerRepository.findByAttemptId(attemptId);
+        BigDecimal total = allAns.stream()
+                .map(a -> a.getMarksAwarded() != null ? a.getMarksAwarded() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        att.setScore(total);
+        if (att.getExam() != null && att.getExam().getPassMarks() != null) {
+            att.setPassed(total.compareTo(att.getExam().getPassMarks()) >= 0);
+        }
+        attemptRepository.save(att);
+        return total;
     }
 
     private String determineSection(Question q) {

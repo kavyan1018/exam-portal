@@ -253,22 +253,7 @@ public class FacultyExamController {
         BigDecimal marks = new BigDecimal(payload.get("marks").toString());
         String feedback = payload.get("feedback") != null ? payload.get("feedback").toString() : null;
 
-        StudentAnswer ans = studentAnswerRepository.findByAttemptIdAndQuestionId(attemptId, questionId)
-                .orElseThrow(() -> new IllegalArgumentException("Answer not found"));
-        ans.setMarksAwarded(marks);
-        if (feedback != null) ans.setAiFeedback(feedback);
-        ans.setEvaluated(true);
-        studentAnswerRepository.save(ans);
-
-        ExamAttempt att = ans.getAttempt();
-        List<StudentAnswer> allAns = studentAnswerRepository.findByAttemptId(attemptId);
-        BigDecimal total = allAns.stream()
-                .map(a -> a.getMarksAwarded() != null ? a.getMarksAwarded() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        att.setScore(total);
-        att.setPassed(total.compareTo(att.getExam().getPassMarks()) >= 0);
-        attemptRepository.save(att);
-
-        return ResponseEntity.ok(Map.of("message", "Marks updated successfully", "newScore", total));
+        BigDecimal newScore = aiAnswerEvaluationService.updateQuestionMarks(attemptId, questionId, marks, feedback);
+        return ResponseEntity.ok(Map.of("message", "Marks updated successfully", "newScore", newScore));
     }
 }
