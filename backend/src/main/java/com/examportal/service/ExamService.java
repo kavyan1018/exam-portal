@@ -37,10 +37,14 @@ public class ExamService {
     private com.examportal.repository.ExamAttemptRepository attemptRepository;
 
     @Transactional
+    @Transactional
     public void deleteExam(Long examId) {
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() -> new IllegalArgumentException("Exam not found with id: " + examId));
-        attemptRepository.deleteByExamId(examId);
+        List<ExamAttempt> attempts = attemptRepository.findByExamIdOrderByStartedAtDesc(examId);
+        if (attempts != null && !attempts.isEmpty()) {
+            attemptRepository.deleteAll(attempts);
+        }
         examRepository.delete(exam);
     }
 
