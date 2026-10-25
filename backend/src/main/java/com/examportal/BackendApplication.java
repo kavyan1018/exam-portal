@@ -12,7 +12,7 @@ public class BackendApplication {
 
 	@PostConstruct
 	public void init() {
-		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Kolkata"));
 	}
 
 	public static void main(String[] args) {
