@@ -211,7 +211,8 @@ export default function StudentPaperCheckView() {
           { id: 'A', label: 'Section A (MCQs)' },
           { id: 'B', label: 'Section B (Short Answers)' },
           { id: 'C', label: 'Section C (Predict Output)' },
-          { id: 'D', label: 'Section D (Programming / Code)' },
+          { id: 'D', label: 'Section D (Practical Code)' },
+          { id: 'E', label: 'Section E (Design Challenge)' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -288,10 +289,10 @@ export default function StudentPaperCheckView() {
               {/* Student's Submitted Answer */}
               <div style={{ marginBottom: '1rem' }}>
                 <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-                  Student's Written Response {q.section === 'D' ? `(Code in ${q.codeLanguage || 'Editor'})` : ''}:
+                  Student's Written Response {(q.section === 'D' || q.section === 'E') ? `(Code in ${q.codeLanguage || 'Editor'})` : ''}:
                 </span>
 
-                {q.section === 'D' ? (
+                {(q.section === 'D' || q.section === 'E') ? (
                   <pre style={{
                     margin: 0,
                     background: '#0f172a',

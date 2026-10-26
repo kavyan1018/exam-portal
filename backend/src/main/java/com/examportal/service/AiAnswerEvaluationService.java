@@ -92,7 +92,7 @@ public class AiAnswerEvaluationService {
                 ans.setMarksAwarded(res.marks);
                 ans.setAiFeedback(res.feedback);
             } else {
-                // Section D: Programming / Code Implementation
+                // Section D & Section E: Practical Code & Design Challenge Implementation
                 EvaluationResult res = evaluateCodeAnswer(q, ans, maxMarks);
                 ans.setMarksAwarded(res.marks);
                 ans.setAiFeedback(res.feedback);
@@ -410,7 +410,10 @@ public class AiAnswerEvaluationService {
 
     private String determineSection(Question q) {
         String text = q.getQuestionText() != null ? q.getQuestionText() : "";
-        if (text.contains("Section D") || text.contains("Programming") || text.toLowerCase().contains("section d:")) {
+        if (text.contains("Section E") || text.toLowerCase().contains("section e:") || text.contains("Design Challenge")) {
+            return "E";
+        }
+        if (text.contains("Section D") || text.contains("Programming") || text.toLowerCase().contains("section d:") || text.contains("Practical")) {
             return "D";
         }
         if (text.contains("Section C") || text.contains("Predict the Output") || text.toLowerCase().contains("section c:")) {

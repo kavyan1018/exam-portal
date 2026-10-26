@@ -408,7 +408,10 @@ export default function ExamTakingView() {
   const getQuestionSection = (q) => {
     if (!q) return 'A';
     const text = q.questionText || '';
-    if (text.includes('Section D') || text.includes('Programming Questions') || text.toLowerCase().includes('section d:')) {
+    if (text.includes('Section E') || text.toLowerCase().includes('section e:') || text.includes('Design Challenge')) {
+      return 'E';
+    }
+    if (text.includes('Section D') || text.includes('Programming Questions') || text.toLowerCase().includes('section d:') || text.includes('Practical')) {
       return 'D';
     }
     if (text.includes('Section C') || text.includes('Predict the Output') || text.toLowerCase().includes('section c:')) {
@@ -422,8 +425,10 @@ export default function ExamTakingView() {
 
   const getCleanQuestionText = (text, section) => {
     if (!text) return '';
-    if (section === 'D') {
-      return text.replace(/\n\s*Which (program implementation|code snippet).+$/is, '').trim();
+    if (section === 'D' || section === 'E') {
+      return text
+        .replace(/\n\s*Which (CSS codebase|CSS rule|program implementation|code snippet|option).+$/is, '')
+        .trim();
     }
     return text;
   };
@@ -519,13 +524,21 @@ export default function ExamTakingView() {
             {getCleanQuestionText(currentQ.questionText, currentSection)}
           </div>
 
-          {/* Section D: Built-in Multi-Language Code Compiler Workspace */}
-          {currentSection === 'D' && (
+          {/* Section D & Section E: Built-in Multi-Language Code Compiler Workspace */}
+          {(currentSection === 'D' || currentSection === 'E') && (
             <div style={{ marginBottom: '1.5rem' }}>
               <CodeCompilerWorkspace
                 questionId={currentQ.id}
                 initialCode={textAnswers[currentQ.id] || ''}
-                initialLanguage={codeLanguages[currentQ.id] || 'javascript'}
+                initialLanguage={
+                  codeLanguages[currentQ.id] ||
+                  (currentSection === 'E'
+                    ? 'html'
+                    : (currentQ.questionText?.toLowerCase().includes('html')
+                        ? 'html'
+                        : (currentQ.questionText?.toLowerCase().includes('css') ? 'css' : 'html'))
+                  )
+                }
                 onSaveAnswer={(codeVal, langVal) => handleSaveCodeAnswer(codeVal, langVal)}
                 isSaved={!!textAnswers[currentQ.id]}
               />

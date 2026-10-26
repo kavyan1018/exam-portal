@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 const LANGUAGE_OPTIONS = [
-  { id: 'html', label: 'HTML', monacoLang: 'html', isWeb: true },
+  { id: 'html', label: 'HTML (HTML + CSS + JS)', monacoLang: 'html', isWeb: true },
   { id: 'css', label: 'CSS', monacoLang: 'css', isWeb: true },
   { id: 'javascript', label: 'JavaScript', monacoLang: 'javascript', isWeb: false },
   { id: 'c', label: 'C', monacoLang: 'c', isWeb: false },
@@ -27,94 +27,14 @@ const LANGUAGE_OPTIONS = [
 ];
 
 const STARTER_TEMPLATES = {
-  html: `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Solution</title>
-  <style>
-    body { font-family: system-ui, sans-serif; padding: 20px; line-height: 1.5; }
-    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; }
-    h1 { color: #1e293b; margin-top: 0; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>Welcome to My Solution</h1>
-    <p>Write your HTML structure here...</p>
-  </div>
-</body>
-</html>`,
-
-  css: `/* Write your CSS styling solution below */
-/* Preview container wraps your elements automatically */
-.container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-  background-color: #f1f5f9;
-}
-
-.box {
-  background: #ffffff;
-  color: #1e293b;
-  padding: 1.5rem 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  font-family: sans-serif;
-  font-weight: 600;
-  border: 2px solid #3b82f6;
-  text-align: center;
-}`,
-
-  javascript: `// Write your JavaScript solution below
-function solve() {
-  // Your code here
-}
-
-solve();`,
-
-  c: `#include <stdio.h>
-
-int main() {
-    // Write your C program here
-    return 0;
-}`,
-
-  cpp: `#include <iostream>
-using namespace std;
-
-int main() {
-    // Write your C++ program here
-    return 0;
-}`,
-
-  java: `import java.util.*;
-
-public class Solution {
-    public static void main(String[] args) {
-        // Write your Java program here
-        Scanner sc = new Scanner(System.in);
-    }
-}`,
-
-  python: `# Write your Python program here
-def main():
-    pass
-
-if __name__ == "__main__":
-    main()`,
-
-  dsa: `// Data Structures & Algorithms Solution
-#include <iostream>
-#include <vector>
-using namespace std;
-
-int main() {
-    // Write your solution here
-    return 0;
-}`
+  html: '',
+  css: '',
+  javascript: '',
+  c: '',
+  cpp: '',
+  java: '',
+  python: '',
+  dsa: ''
 };
 
 export default function CodeCompilerWorkspace({
@@ -130,12 +50,15 @@ export default function CodeCompilerWorkspace({
   });
 
   const [code, setCode] = useState(() => {
-    return initialCode || STARTER_TEMPLATES[language] || STARTER_TEMPLATES['javascript'];
+    return initialCode || '';
   });
 
   const [stdin, setStdin] = useState('');
   const [showStdin, setShowStdin] = useState(false);
-  const [activeTab, setActiveTab] = useState('console'); // 'console' | 'preview'
+  const [activeTab, setActiveTab] = useState(() => {
+    const initialLang = initialLanguage?.toLowerCase() || 'html';
+    return (initialLang === 'html' || initialLang === 'css') ? 'preview' : 'console';
+  });
   const [running, setRunning] = useState(false);
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
@@ -145,42 +68,46 @@ export default function CodeCompilerWorkspace({
 
   const prevQIdRef = useRef(questionId);
 
+  // Listen to sandbox logs and errors from iframe
+  useEffect(() => {
+    const handleIframeMessage = (e) => {
+      if (e.data && e.data.type === 'IFRAME_LOG') {
+        const prefix = e.data.level === 'error' ? '[ERROR] ' : e.data.level === 'warn' ? '[WARN] ' : '';
+        setOutput(prev => prev ? `${prev}\n${prefix}${e.data.args}` : `${prefix}${e.data.args}`);
+        if (e.data.level === 'error') {
+          setExitCode(1);
+        }
+      }
+    };
+    window.addEventListener('message', handleIframeMessage);
+    return () => window.removeEventListener('message', handleIframeMessage);
+  }, []);
+
   // Sync state if questionId changes
   useEffect(() => {
     if (prevQIdRef.current !== questionId) {
       prevQIdRef.current = questionId;
-      const initialLang = initialLanguage?.toLowerCase() || 'javascript';
-      const matched = LANGUAGE_OPTIONS.find(l => l.id === initialLang) ? initialLang : 'javascript';
+      const initialLang = initialLanguage?.toLowerCase() || 'html';
+      const matched = LANGUAGE_OPTIONS.find(l => l.id === initialLang) ? initialLang : 'html';
       setLanguage(matched);
-      setCode(initialCode || STARTER_TEMPLATES[matched] || '');
+      setCode(initialCode || '');
       setOutput('');
       setError('');
       setExitCode(null);
       setExecutionTime(null);
       setSubmitFeedback(false);
+      if (matched === 'html' || matched === 'css') {
+        setActiveTab('preview');
+      } else {
+        setActiveTab('console');
+      }
     }
   }, [questionId, initialCode, initialLanguage]);
 
   // Handle language switch
   const handleLanguageChange = (newLang) => {
     if (newLang === language) return;
-    
-    // Check if student modified code significantly
-    const currentStarter = STARTER_TEMPLATES[language];
-    if (code.trim() && code.trim() !== currentStarter.trim()) {
-      const confirmChange = window.confirm(
-        `Switching language to ${newLang.toUpperCase()} will replace your editor content with the ${newLang.toUpperCase()} starter template. Do you want to proceed?`
-      );
-      if (!confirmChange) return;
-    }
-
     setLanguage(newLang);
-    setCode(STARTER_TEMPLATES[newLang] || '');
-    setOutput('');
-    setError('');
-    setExitCode(null);
-    setExecutionTime(null);
-
     // If switching to HTML/CSS, default tab to preview
     if (newLang === 'html' || newLang === 'css') {
       setActiveTab('preview');
@@ -190,8 +117,8 @@ export default function CodeCompilerWorkspace({
   };
 
   const handleReset = () => {
-    if (window.confirm("Reset code to the original starter template for this language?")) {
-      setCode(STARTER_TEMPLATES[language] || '');
+    if (window.confirm("Clear all code in the editor?")) {
+      setCode('');
       setOutput('');
       setError('');
       setExitCode(null);
@@ -215,11 +142,11 @@ export default function CodeCompilerWorkspace({
 
     const startTime = performance.now();
 
-    // 1. Client-side execution for HTML / CSS
+    // 1. Client-side execution for HTML / CSS (allows HTML + CSS + JS in 1 file)
     if (language === 'html' || language === 'css') {
       setActiveTab('preview');
       setRunning(false);
-      setOutput("Live sandboxed preview updated.");
+      setOutput("Live sandboxed preview updated. Any console.log() or JS script output will appear here.");
       setExitCode(0);
       setExecutionTime(Math.round(performance.now() - startTime));
       return;
@@ -295,20 +222,88 @@ export default function CodeCompilerWorkspace({
     }
   };
 
-  // Build HTML srcDoc for preview
+  // Build HTML srcDoc for preview (supports HTML + CSS + JS in a single file)
   const getPreviewDoc = () => {
-    if (language === 'html') {
-      return code;
+    if (!code || !code.trim()) {
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 90vh;
+      margin: 0;
+      background: #f8fafc;
+      text-align: center;
     }
+  </style>
+</head>
+<body>
+  <div>
+    <p style="font-size: 0.95rem; font-weight: 500; margin: 0;">Type your HTML / CSS / JS code in the editor above.</p>
+    <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">Click "Run Code" to view your live rendered output.</p>
+  </div>
+</body>
+</html>`;
+    }
+
+    if (language === 'html') {
+      const consoleScript = `
+        <script>
+          (function() {
+            var _log = console.log;
+            var _error = console.error;
+            var _warn = console.warn;
+            console.log = function() {
+              window.parent.postMessage({ type: 'IFRAME_LOG', level: 'log', args: Array.from(arguments).map(function(a){ return typeof a === 'object' ? JSON.stringify(a) : String(a); }).join(' ') }, '*');
+              _log.apply(console, arguments);
+            };
+            console.error = function() {
+              window.parent.postMessage({ type: 'IFRAME_LOG', level: 'error', args: Array.from(arguments).map(function(a){ return typeof a === 'object' ? JSON.stringify(a) : String(a); }).join(' ') }, '*');
+              _error.apply(console, arguments);
+            };
+            console.warn = function() {
+              window.parent.postMessage({ type: 'IFRAME_LOG', level: 'warn', args: Array.from(arguments).map(function(a){ return typeof a === 'object' ? JSON.stringify(a) : String(a); }).join(' ') }, '*');
+              _warn.apply(console, arguments);
+            };
+            window.onerror = function(msg, url, line) {
+              window.parent.postMessage({ type: 'IFRAME_LOG', level: 'error', args: 'Runtime Error: ' + msg + ' (line ' + line + ')' }, '*');
+            };
+          })();
+        <\/script>
+      `;
+
+      let rendered = code;
+      if (rendered.includes('<head>')) {
+        rendered = rendered.replace('<head>', '<head>' + consoleScript);
+      } else if (rendered.includes('<html>')) {
+        rendered = rendered.replace('<html>', '<html><head>' + consoleScript + '</head>');
+      } else {
+        rendered = `<!DOCTYPE html><html><head><meta charset="UTF-8">${consoleScript}</head><body>${rendered}</body></html>`;
+      }
+      return rendered;
+    }
+
     if (language === 'css') {
       return `<!DOCTYPE html>
 <html>
 <head>
-  <style>${code}</style>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f8fafc; }
+    .container { padding: 2rem; display: flex; justify-content: center; align-items: center; }
+    .box { background: white; padding: 2rem; border-radius: 8px; border: 1px solid #cbd5e1; }
+    ${code}
+  </style>
 </head>
 <body>
   <div class="container">
-    <div class="box">Sample Preview Element</div>
+    <div class="box">Preview Target Element (.box)</div>
   </div>
 </body>
 </html>`;
@@ -609,7 +604,7 @@ export default function CodeCompilerWorkspace({
       {/* Tab Body: Console vs Live Preview */}
       {activeTab === 'preview' && (language === 'html' || language === 'css') ? (
         <div style={{
-          height: '180px',
+          height: '280px',
           background: 'white',
           padding: '0.5rem',
           overflow: 'auto'
@@ -617,7 +612,7 @@ export default function CodeCompilerWorkspace({
           <iframe
             title="Code Preview Sandbox"
             srcDoc={getPreviewDoc()}
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-modals"
             style={{
               width: '100%',
               height: '100%',
@@ -628,7 +623,7 @@ export default function CodeCompilerWorkspace({
         </div>
       ) : (
         <div style={{
-          height: '180px',
+          height: '200px',
           background: '#020617',
           padding: '0.75rem 1rem',
           fontFamily: 'Consolas, Monaco, monospace',
